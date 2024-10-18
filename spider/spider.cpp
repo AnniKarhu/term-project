@@ -1,6 +1,7 @@
 #include "spider.h"
 
-#include "http_req.h"
+//#include "http_req.h"
+#include "https_req.h"
 
 //Spider::Spider(Data_base* _data_base)
 //{
@@ -97,10 +98,16 @@ bool Spider::prepare_spider(Spider_data start_data) //старт паука
 		std::cout << "test insert failed, unknown reason" << "\n";
 	}
 
-	urls_queue->insert(start_data.start_url);
+	//urls_queue->insert(start_data.start_url);
 
+	//только для отладки - удалить
+	urls_queue->insert("www.1werwww.rt/");
+	urls_queue->insert("https://www.google.com/");
+	urls_queue->insert("https://example.com/");
+	urls_queue->insert("http:///example.com");
+	urls_queue->insert("https://example.com/hjlkj");
+	
 	return true;
-
 }
 
 void Spider::start_spider() //старт паука
@@ -112,9 +119,28 @@ void Spider::start_spider() //старт паука
 	}
 
 	for (auto const& url : *urls_queue)
-	{
-		std::cout << "next url = " << url << "\n";
+	{		
+		std::cout <<  "\n\nnext url = " << url << "\n";
+		http_req* html_request = new http_req(url);
+		if (!html_request->check_url())
+		{
+			delete html_request;
+			html_request = new https_req(url);
+			if (!html_request->check_url())
+			{
+				std::cout << "bad url: " << url << " - mark it as invalid\n";
+				delete html_request;
+				continue;
+			}
+		}
+
+		html_request->get_page();
+		std::cout << "html get result = " << int(html_request->get_request_result()) << "\n";
+
+		delete html_request;
 	}
+
+	теперь добавить больше адресов в очередь и реализовать очередь потоков
 		
 
 }

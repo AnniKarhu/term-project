@@ -15,6 +15,7 @@ set(SOURCE_FILES "main.cpp"
 				 "spider.h" "spider.cpp" "spider_data.h" 
 				 "data_base.h" "data_base.cpp" 
 				 "http_req.cpp" "http_req.h"
+				 "https_req.cpp" "https_req.h"				
 				 "user_interface.h" "user_interface.cpp" 
 				 "ini_parser.h" "ini_parser.cpp" "parser_exceptions.h"
 				 "root_certificates.hpp")
@@ -34,7 +35,7 @@ add_executable(Spider ${SOURCE_FILES})
 target_compile_features(Spider PRIVATE cxx_std_17)
 
 find_package(OpenSSL REQUIRED)
-#include_directories("openssl/x64-windows/include")
+include_directories("openssl/x64-windows/include")
 #include_directories(${OPENSSL_INCLUDE_DIR}) 
 
 #set (READY_OPENSSL_LIBRARIES "openssl/x64-windows/lib") # Путь к библиотеке openssl
