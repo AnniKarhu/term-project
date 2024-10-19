@@ -18,8 +18,7 @@ enum class request_result
 	req_res_ok = 200,
 	req_res_redirect = 301,
 	req_res_forbidden = 403,
-	req_res_page_not_found = 404,
-	
+	req_res_page_not_found = 404,	
 	req_res_other = -1
 };
 

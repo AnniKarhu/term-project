@@ -68,27 +68,6 @@ bool http_req::get_page()
 		// Receive the HTTP response
 		http::read(stream, buffer, res);
 
-		// Write the message to standard out
-		//std::cout << res << std::endl;
-		
-		//request_res = static_cast<request_result>(res.result_int()); //response code from url		
-		//
-		//switch (request_res) 
-		//{
-		//				
-		//case request_result::req_res_ok: {
-		//	html_body_str = boost::beast::buffers_to_string(res.body().data());
-		//	break;
-		//}			
-
-		//case request_result::req_res_redirect: {
-		//	auto location_it = res.find("Location");
-		//	redirected_location = (*location_it).value();
-		//	break;
-		//}  
-		//default:	request_res = request_result::req_res_other;
-		//}		
-		
 		fill_response_fields(res);
 
 		// Gracefully close the socket
@@ -111,20 +90,23 @@ bool http_req::get_page()
 
 void http_req::fill_response_fields(http::response<http::dynamic_body>& res)
 {
-	request_res = static_cast<request_result>(res.result_int()); //response code from url		
+	request_res = static_cast<request_result>(res.result_int()); //response code from url
 
-	switch (request_res)
+	if (request_res == request_result::req_res_ok)
 	{
-	case request_result::req_res_ok: {
-		html_body_str = boost::beast::buffers_to_string(res.body().data());
-		break;
-	}
+		switch (request_res)
+		{
+		case request_result::req_res_ok: {
+			html_body_str = boost::beast::buffers_to_string(res.body().data());
+			break;
+		}
 
-	case request_result::req_res_redirect: {
-		auto location_it = res.find("Location");
-		redirected_location = (*location_it).value();
-		break;
-	}
-	default:	request_res = request_result::req_res_other;
+		case request_result::req_res_redirect: {
+			auto location_it = res.find("Location");
+			redirected_location = (*location_it).value();
+			break;
+		}
+		
+		}
 	}
 }

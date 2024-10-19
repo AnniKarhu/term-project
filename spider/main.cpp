@@ -3,7 +3,7 @@
 #include "Windows.h"
 
 #include "data_base.h"
-#include "user_interface.h"
+//#include "user_interface.h"
 
 #include "ini_parser.h"
 #include "spider.h"
@@ -77,7 +77,8 @@ int main()
 	else
 	{
 		std::cout << "Start indexing from " << spider_data.start_url << std::endl;
-		spider.start_spider(); //старт паука
+		//spider.start_spider(); //старт паука
+		spider.start_spider_threads(); //старт пула потоков паука
 	}
 				
 

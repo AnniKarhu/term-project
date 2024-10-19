@@ -14,9 +14,11 @@ set(PostgreSQL_ADDITIONAL_VERSIONS "16")
 set(SOURCE_FILES "main.cpp" 
 				 "spider.h" "spider.cpp" "spider_data.h" 
 				 "data_base.h" "data_base.cpp" 
-				 "http_req.cpp" "http_req.h"
-				 "https_req.cpp" "https_req.h"				
-				 "user_interface.h" "user_interface.cpp" 
+				 "http_req.h" "http_req.cpp"
+				 "https_req.h" "https_req.cpp"	
+				 "tasks_queue.h" "tasks_queue.cpp"
+				 "urls_thread_pool.h" "urls_thread_pool.cpp"
+				# "user_interface.h" "user_interface.cpp" 
 				 "ini_parser.h" "ini_parser.cpp" "parser_exceptions.h"
 				 "root_certificates.hpp")
 

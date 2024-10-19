@@ -40,32 +40,15 @@ bool https_req::get_page()
         http::read(stream, buffer, res);// Receive the HTTP response
 
         fill_response_fields(res);
-
-        //request_res = static_cast<request_result>(res.result_int()); //response code from url		
-
-        //switch (request_res)
-        //{
-
-        //case request_result::req_res_ok: {
-        //    html_body_str = boost::beast::buffers_to_string(res.body().data());
-        //    break;
-        //}
-
-        //case request_result::req_res_redirect: {
-        //    auto location_it = res.find("Location");
-        //    redirected_location = (*location_it).value();
-        //    break;
-        //}
-        //default:	request_res = request_result::req_res_other;
-        //}
+             
 
         // Gracefully close the stream
         beast::error_code ec;
         stream.shutdown(ec);
             
 
-        if (ec != net::ssl::error::stream_truncated) 
-            throw beast::system_error{ ec };
+        //if (ec != net::ssl::error::stream_truncated) 
+        //    throw beast::system_error{ ec };
     }
     catch (std::exception const& e)
     {

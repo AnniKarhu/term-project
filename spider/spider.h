@@ -38,6 +38,7 @@ public:
 
 	bool prepare_spider(Spider_data start_data); //подготовка  паука к работе
 	void start_spider(); //старт паука
+	void start_spider_threads(); //старт пула потоков паука
 
 	//создать 1 или 2 класса для скачивания страниц по http и https
 	//	не забыть анализировать заголовки и возможные редиректы

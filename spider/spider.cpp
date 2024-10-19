@@ -1,19 +1,7 @@
+
 #include "spider.h"
-
-//#include "http_req.h"
 #include "https_req.h"
-
-//Spider::Spider(Data_base* _data_base)
-//{
-//	if (!_data_base)
-//	{
-//		spider_invalid = true;
-//		return;
-//	}
-//		
-//	data_base = _data_base;
-//	urls_queue = new std::set<std::string>;
-//}
+#include "urls_thread_pool.h"
 
 Spider::Spider()  noexcept
 {	
@@ -105,6 +93,7 @@ bool Spider::prepare_spider(Spider_data start_data) //старт паука
 	urls_queue->insert("https://www.google.com/");
 	urls_queue->insert("https://example.com/");
 	urls_queue->insert("http:///example.com");
+	urls_queue->insert("https://example.com/a");
 	urls_queue->insert("https://example.com/hjlkj");
 	
 	return true;
@@ -119,8 +108,8 @@ void Spider::start_spider() //старт паука
 	}
 
 	for (auto const& url : *urls_queue)
-	{		
-		std::cout <<  "\n\nnext url = " << url << "\n";
+	{
+		std::cout << "\n\nnext url = " << url << "\n";
 		http_req* html_request = new http_req(url);
 		if (!html_request->check_url())
 		{
@@ -139,8 +128,34 @@ void Spider::start_spider() //старт паука
 
 		delete html_request;
 	}
+}
 
-	теперь добавить больше адресов в очередь и реализовать очередь потоков
+void Spider::start_spider_threads() //старт пула потоков паука
+{
+	thread_pool urls_thread_pool;
+
+	urls_thread_pool.submit(url_item("https://www.google.com/", 1));
+	urls_thread_pool.submit(url_item("https://example.com/", 2));
+	urls_thread_pool.submit(url_item("http://example.com/", 2));
+	urls_thread_pool.submit(url_item("https://example.com/3", 3));
+	urls_thread_pool.submit(url_item("http://example.com/3", 3));
+	urls_thread_pool.submit(url_item("https://example.com/4", 4));
+	urls_thread_pool.submit(url_item("http://example.com/4", 4));
+	urls_thread_pool.submit(url_item("https://example.com/5", 5));
+	urls_thread_pool.submit(url_item("http://example.com/5", 5));
+	urls_thread_pool.submit(url_item("https://example.com/6", 6));
+	urls_thread_pool.submit(url_item("http://example.com/6", 6));
+	urls_thread_pool.submit(url_item("https://example.com/7", 7));
+	urls_thread_pool.submit(url_item("http://example.com/7", 7));
+	urls_thread_pool.submit(url_item("https://example.com/8", 8));
+	urls_thread_pool.submit(url_item("http://example.com/8", 8));
+	urls_thread_pool.submit(url_item("https://example.com/9", 9));
+	urls_thread_pool.submit(url_item("http://example.com/9", 9));
+	
+
+	
+	urls_thread_pool.start_threads_work();
+}
 		
 
-}
+
