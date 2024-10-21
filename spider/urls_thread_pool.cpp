@@ -7,8 +7,8 @@ thread_pool::thread_pool(const std::string& start_url, unsigned int max_depth)
 		std::cout << "Total threads number = " << cores << "\n";
 		std::cout << "Work threads number = " << cores - 1 << "\n";
 
-		//for (int i = 0; i < cores - 1; ++i) //1 основной поток
-			for (int i = 0; i < 4; ++i) //1 основной поток
+		for (int i = 0; i < cores - 1; ++i) //1 основной поток
+		//	for (int i = 0; i < 4; ++i) //1 основной поток
 		{
 			th_vector.push_back(url_processing_thread(std::thread(&thread_pool::work, this, i)));
 			std::cout << "work thread id = " << th_vector[i].get_id() << " created\n";
@@ -55,7 +55,7 @@ void thread_pool::pool_queue_pop_next(const int& thread_index)
 	if (pool_queue.sq_pop(new_urls_set, new_words_map))
 	{
 		
-
+		
 		//добавить новый список урлов в общую очередь
 				//	добавить новый список адресов в базу данных
 				//	добавить новый список слов в базу данных

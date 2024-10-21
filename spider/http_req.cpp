@@ -5,7 +5,7 @@ http_req::http_req(std::string _full_url) : full_url(_full_url) {}
 
 bool http_req::check_url()
 {
-	std::cout << " full url = " << full_url << "\n";	
+	//std::cout << " full url = " << full_url << "\n";	
 
 	size_t pos = full_url.find(url_start());
 

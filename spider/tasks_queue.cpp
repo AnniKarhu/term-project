@@ -1,5 +1,5 @@
 ﻿  
-#include <chrono>
+//#include <chrono>
 #include <map>
 #include <set>
 
@@ -79,7 +79,7 @@ bool tasks_queue::is_empty()
 
 bool tasks_queue::work_function(const url_item& new_url_item, std::set<std::string>& new_urls_set, std::map<std::string, unsigned int>& new_words_map)
 {		
-		std::cout << "work_function: " <<  " url = " << new_url_item.url << " depth = " << new_url_item.url_depth << std::endl;
+		//std::cout << "work_function: " <<  " url = " << new_url_item.url << " depth = " << new_url_item.url_depth << std::endl;
 
 		http_req* html_request = new http_req(new_url_item.url);
 		 
@@ -113,7 +113,7 @@ bool tasks_queue::work_function(const url_item& new_url_item, std::set<std::stri
 					//удалить после отладки
 					for (auto& el : new_urls_set)
 					{
-						std::cout << "new  url = " << el << "\n";
+						std::cout << "new  url = " << el << "depth = " << new_url_item.url_depth +1 << "\n";
 					}
 				}
 
@@ -127,7 +127,7 @@ bool tasks_queue::work_function(const url_item& new_url_item, std::set<std::stri
 				//удалить после отладки
 				for (auto& el : new_urls_set)
 				{
-					std::cout << "new  url redirected = " << el << "\n";
+					std::cout << "new  url redirected = " << el << "depth = " << new_url_item.url_depth + 1 << "\n";
 				}
 				break;
 			}
@@ -135,7 +135,7 @@ bool tasks_queue::work_function(const url_item& new_url_item, std::set<std::stri
 			default: { return false; }
 			}			 
 		};
-		std::cout << "html get result = " << int(html_request->get_request_result()) << "\n";
+		//std::cout << "html get result = " << int(html_request->get_request_result()) << "\n";
 
 		delete html_request;
 		return true;
