@@ -51,15 +51,9 @@ Spider::~Spider()
 	delete data_base;
 }
 
-bool Spider::prepare_spider(Spider_data start_data) //старт паука
+bool Spider::test_database() //только для отладки - удалить
 {
-	urls_queue = new std::set<std::string>;
-	
-	search_depth = start_data.search_depth;
-	min_word_length = start_data.min_word_length;
-	max_word_length = start_data.max_word_length;
-
-	data_base = new Data_base(start_data.db_connection_string);
+	data_base = new Data_base(db_connection_string);
 	if (data_base->start_db())
 	{
 		std::cout << "db started" << "\n";
@@ -78,28 +72,15 @@ bool Spider::prepare_spider(Spider_data start_data) //старт паука
 		if (!data_base->test_insert())
 		{
 			std::cout << "test insert failed: " << data_base->get_last_error_desc();
-		};
-
+		}
 	}
 	catch (...)
 	{
 		std::cout << "test insert failed, unknown reason" << "\n";
 	}
-
-	//urls_queue->insert(start_data.start_url);
-
-	//только для отладки - удалить
-	urls_queue->insert("www.1werwww.rt/");
-	urls_queue->insert("https://www.google.com/");
-	urls_queue->insert("https://example.com/");
-	urls_queue->insert("http:///example.com");
-	urls_queue->insert("https://example.com/a");
-	urls_queue->insert("https://example.com/hjlkj");
-	
-	return true;
 }
 
-void Spider::start_spider() //старт паука
+void Spider::test_get_html() //только для отладки - удалить
 {
 	if (!urls_queue)
 	{
@@ -130,31 +111,48 @@ void Spider::start_spider() //старт паука
 	}
 }
 
+bool Spider::prepare_spider(Spider_data start_data) //старт паука
+{
+	search_depth = start_data.search_depth;
+	min_word_length = start_data.min_word_length;
+	max_word_length = start_data.max_word_length;
+	db_connection_string = start_data.db_connection_string;
+	start_url = start_data.start_url;
+
+	urls_queue = new std::set<std::string>;
+	urls_queue->insert(start_data.start_url);
+
+	//только для отладки - удалить
+	/*urls_queue->insert("www.1werwww.rt/");
+	urls_queue->insert("https://www.google.com/");
+	urls_queue->insert("https://example.com/");
+	urls_queue->insert("http:///example.com");
+	urls_queue->insert("https://example.com/a");
+	urls_queue->insert("https://example.com/hjlkj");*/
+	
+	return true;
+}
+
+void Spider::start_spider() //старт паука
+{
+	
+}
+
 void Spider::start_spider_threads() //старт пула потоков паука
 {
-	thread_pool urls_thread_pool;
-
-	urls_thread_pool.submit(url_item("https://www.google.com/", 1));
-	urls_thread_pool.submit(url_item("https://example.com/", 2));
-	urls_thread_pool.submit(url_item("http://example.com/", 2));
-	urls_thread_pool.submit(url_item("https://example.com/3", 3));
-	urls_thread_pool.submit(url_item("http://example.com/3", 3));
-	urls_thread_pool.submit(url_item("https://example.com/4", 4));
-	urls_thread_pool.submit(url_item("http://example.com/4", 4));
-	urls_thread_pool.submit(url_item("https://example.com/5", 5));
-	urls_thread_pool.submit(url_item("http://example.com/5", 5));
-	urls_thread_pool.submit(url_item("https://example.com/6", 6));
-	urls_thread_pool.submit(url_item("http://example.com/6", 6));
-	urls_thread_pool.submit(url_item("https://example.com/7", 7));
-	urls_thread_pool.submit(url_item("http://example.com/7", 7));
-	urls_thread_pool.submit(url_item("https://example.com/8", 8));
-	urls_thread_pool.submit(url_item("http://example.com/8", 8));
-	urls_thread_pool.submit(url_item("https://example.com/9", 9));
-	urls_thread_pool.submit(url_item("http://example.com/9", 9));
-	
+	thread_pool urls_thread_pool(start_url, search_depth);
 
 	
 	urls_thread_pool.start_threads_work();
+
+//	html_parser my_html_parser;
+
+	//std::string base_str;
+	//base_str = my_html_parser.get_base_host("http://www.1test.gh/fgty6.htm");
+
+
+	//my_html_parser.get_urls_from_html(" < p > <   a target  href = '/7test/' >More information...< / a>< / p>\n", base_str);
+
 }
 		
 

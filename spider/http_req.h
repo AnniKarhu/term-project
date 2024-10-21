@@ -1,3 +1,4 @@
+#pragma once
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/beast/version.hpp>
@@ -49,5 +50,7 @@ public:
 
 	virtual bool get_page();
 	bool check_url();
+	std::string get_redirected_location() const { return redirected_location; }
+	std::string get_html_body_str() const { return html_body_str; 	}
 	
 };

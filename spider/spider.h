@@ -22,10 +22,15 @@ private:
 	int	search_depth = 1;
 	int	min_word_length = 3;
 	int	max_word_length = 32;
+	std::string db_connection_string;
+	std::string start_url;
 
 private:
 	//список урлов для индексации
 	std::set<std::string>* urls_queue = nullptr;
+
+	bool test_database(); //только для отладки - удалить
+	void test_get_html(); //только для отладки - удалить
 	
 public:
 	

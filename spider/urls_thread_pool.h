@@ -15,26 +15,6 @@ public:
 	int thread_num = -1;	
 };
 
-//class url_processing_thread
-//{
-//public:
-//	url_processing_thread(std::function<void()> _work_function, int _thread_num)
-//	{
-//		url_thread = new std::thread(_work_function);
-//		thread_num = _thread_num;
-//	}
-//	std::thread* url_thread;
-//	bool in_idle = true;
-//	int thread_num = -1;
-//
-//	~url_processing_thread()
-//	{
-//		(*url_thread).join();
-//		delete url_thread;
-//	}
-//};
-
-
 class thread_pool
 {
 private:
@@ -43,21 +23,21 @@ private:
 
 	tasks_queue  pool_queue;	
 	
-	std::atomic<bool> task_generator_finished(); // = false;
+	std::atomic<bool> task_generator_finished(); 
 	bool start_work = false;
 	
 	std::mutex start_mutex;
 	std::condition_variable start_threads;
 	
-	void work(int thread_index); //рабочая функция потоков	
+	void work(const int& thread_index); //рабочая функция потоков
+	void pool_queue_pop_next(const int& thread_index);
+	void submit(const url_item new_url_item); //добавление адреса в очередь
 
 public:	
 	
-	thread_pool();	
+	thread_pool(const std::string& start_url, unsigned int max_depth);
 	~thread_pool();	
 
-	//void submit(std::function<void()> new_task, std::string func_name, int func_count); //добавление задачи в очередь
-	void submit(url_item new_url_item); //добавление адреса в очередь
-	void start_threads_work(); //старт рабочих потоков
-	//void finish_tasks(); //флаг завершения генерирования задач	
+	
+	void start_threads_work(); //старт рабочих потоков	
 };
