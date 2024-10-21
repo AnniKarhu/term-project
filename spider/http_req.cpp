@@ -92,21 +92,21 @@ void http_req::fill_response_fields(http::response<http::dynamic_body>& res)
 {
 	request_res = static_cast<request_result>(res.result_int()); //response code from url
 
-	if (request_res == request_result::req_res_ok)
-	{
+	//if (request_res == request_result::req_res_ok)
+	//{
 		switch (request_res)
 		{
 		case request_result::req_res_ok: {
-			html_body_str = boost::beast::buffers_to_string(res.body().data());
-			break;
-		}
+				html_body_str = boost::beast::buffers_to_string(res.body().data());
+				break;
+			}
 
 		case request_result::req_res_redirect: {
-			auto location_it = res.find("Location");
-			redirected_location = (*location_it).value();
-			break;
-		}
+				auto location_it = res.find("Location");
+				redirected_location = (*location_it).value();
+				break;
+			}
 		
 		}
-	}
+	//}
 }

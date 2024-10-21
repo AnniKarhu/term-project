@@ -70,7 +70,7 @@ std::set<std::string> html_parser::get_urls_from_html(const std::string& html_bo
     s2 = std::regex_replace(s2, std::regex("< a"), "<a");
     s2 = std::regex_replace(s2, std::regex("'"), "\"");
     s2 = std::regex_replace(s2, std::regex(" ?= ?"), "=");
-   // std::cout << "s2 string = " << s2 << "\n\n";
+    std::cout << "s2 string = " << s2 << "\n\n";
 
     //поиск ссылок <a href>
     std::smatch res1;
@@ -101,6 +101,7 @@ std::set<std::string> html_parser::get_urls_from_html(const std::string& html_bo
         s2 = res1.suffix(); //продолжить поиск в оставшейся части
     };   
     
+    //std::set<std::string> urls_set;
     return urls_set;
 }
 

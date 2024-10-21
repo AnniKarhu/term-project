@@ -99,26 +99,40 @@ bool tasks_queue::work_function(const url_item& new_url_item, std::set<std::stri
 		{			
 			switch (html_request->get_request_result())
 			{
-			case request_result::req_res_ok: 
-				if (new_url_item.url_depth <= max_depth)
+			case request_result::req_res_ok:
+			{
+				if (new_url_item.url_depth < max_depth)
 				{
-					std::string base_host = my_html_parser.get_base_host(new_url_item.url); 
+					std::string base_host = my_html_parser.get_base_host(new_url_item.url);
 					new_urls_set = my_html_parser.get_urls_from_html(html_request->get_html_body_str(), base_host);
-					
+
+					if (new_urls_set.size() == 0)
+					{
+						std::cout << "no links got from page " << new_url_item.url << "\n";
+					}
+					//удалить после отладки
 					for (auto& el : new_urls_set)
 					{
 						std::cout << "new  url = " << el << "\n";
 					}
 				}
-					
-					new_words_map = get_words_from_html_page();	
-					break;
 
-			case request_result::req_res_redirect:
-				new_urls_set.insert(html_request->get_redirected_location());
+				new_words_map = get_words_from_html_page();
 				break;
+			}
+			case request_result::req_res_redirect:
+			{
+				std::string redirection_url = html_request->get_redirected_location();
+				new_urls_set.insert(redirection_url);  (html_request->get_redirected_location());
+				//удалить после отладки
+				for (auto& el : new_urls_set)
+				{
+					std::cout << "new  url redirected = " << el << "\n";
+				}
+				break;
+			}
 
-			default: return false;	
+			default: { return false; }
 			}			 
 		};
 		std::cout << "html get result = " << int(html_request->get_request_result()) << "\n";
@@ -132,6 +146,8 @@ bool tasks_queue::work_function(const url_item& new_url_item, std::set<std::stri
 std::map<std::string, unsigned int> tasks_queue::get_words_from_html_page()
 {
 	std::map<std::string, unsigned int> new_word_map;
+
+	//продолжить здесь
 	return new_word_map;
 }
 
