@@ -63,6 +63,21 @@ std::set<std::string> html_parser::get_urls_from_html(const std::string& html_bo
 {
     std::set<std::string> urls_set;
     
+    продолжить здесь - ускорить работу функции:
+    1. Найти тег <title></title> - забрать слова из середины, можно регулярными выражениями
+    2. Найти тег <body >. Найти - сначала позицию <body, или Б < body> - удалить всю строку до этого тега
+    3. функция поиска любого тега <> - первого попавшегося в начале строки - по поиску std::string find - поиск < затем поиск > затем снова поиск <
+    4. Функция определения типа тега по именм. 
+    
+        цикл:
+            5. Поиск следующего тега - если a - отправить на парсинг для получения ссылки с регулярными выражениями
+            6. удалить тег
+        конец цикла
+        
+    7. удалить все повторяющиеся пробелы, табуляции, знаки препинания, переводы строки
+        8. Перевести все в нижний регистр
+        9. Скормить строку в map с подсчетом повторений слов
+
     //привести html к более валидному виду    
     std::string s2 = std::regex_replace(html_body_str, std::regex("\n|\t| {2,}"), " ");
     s2 = std::regex_replace(s2, std::regex("< /"), "</");
@@ -96,7 +111,8 @@ std::set<std::string> html_parser::get_urls_from_html(const std::string& html_bo
         std::string final_url = complete_url(new_base_path, base_str) + suf_str; //финальный вид урла
        // std::cout << "final_url = " << final_url << "\n";
 
-        std::cout << "New iter: " << final_url << std::endl; 
+       // std::string out_str = "New iter: " + final_url + "\n"; // std::endl;
+       // std::cout << out_str;
         urls_set.insert(final_url);
         s2 = res1.suffix(); //продолжить поиск в оставшейся части
     };   

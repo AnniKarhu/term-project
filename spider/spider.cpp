@@ -119,17 +119,12 @@ bool Spider::prepare_spider(Spider_data start_data) //старт паука
 	db_connection_string = start_data.db_connection_string;
 	start_url = start_data.start_url;
 
+	max_threads_num = start_data.threads_num;
+	empty_thread_sleep_time = start_data.empty_thread_sleep_time;
+
 	urls_queue = new std::set<std::string>;
 	urls_queue->insert(start_data.start_url);
-
-	//только для отладки - удалить
-	/*urls_queue->insert("www.1werwww.rt/");
-	urls_queue->insert("https://www.google.com/");
-	urls_queue->insert("https://example.com/");
-	urls_queue->insert("http:///example.com");
-	urls_queue->insert("https://example.com/a");
-	urls_queue->insert("https://example.com/hjlkj");*/
-	
+		
 	return true;
 }
 
@@ -140,9 +135,7 @@ void Spider::start_spider() //старт паука
 
 void Spider::start_spider_threads() //старт пула потоков паука
 {
-	thread_pool urls_thread_pool(start_url, search_depth);
-
-	
+	thread_pool urls_thread_pool(start_url, search_depth, max_threads_num, empty_thread_sleep_time);	
 	urls_thread_pool.start_threads_work();
 
 //	html_parser my_html_parser;

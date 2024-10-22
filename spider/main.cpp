@@ -38,6 +38,9 @@ int main()
 		spider_data.search_depth = parser.get_value<int>("Search_settings.search_depth");
 		spider_data.max_word_length = parser.get_value<int>("Search_settings.max_word_length");
 		spider_data.min_word_length = parser.get_value<int>("Search_settings.min_word_length");		
+
+		spider_data.threads_num = parser.get_value<int>("Process_settings.max_threads");
+		spider_data.empty_thread_sleep_time = parser.get_value<int>("Process_settings.empty_thread_sleep_time");
 		
 	}
 	catch (const ParserException_no_file& ex)

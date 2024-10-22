@@ -22,8 +22,11 @@ private:
 	int	search_depth = 1;
 	int	min_word_length = 3;
 	int	max_word_length = 32;
+	int max_threads_num = 0;
+	int empty_thread_sleep_time = 100;
 	std::string db_connection_string;
 	std::string start_url;
+
 
 private:
 	//список урлов для индексации
