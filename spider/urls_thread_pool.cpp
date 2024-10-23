@@ -81,6 +81,8 @@ bool thread_pool::process_next_task(const int& thread_index) //  pool_queue_pop_
 					pool_queue.sq_push(url_item(el, task.url_depth + 1), thread_index);
 				}
 
+				std::string out_str = "url " + task.url + " " + std::to_string(task.url_depth) + " thread " + std::to_string(thread_index) + " finished\n";
+				std::cout << out_str;
 				std::cout << get_queue_state();				
 			}
 			result = true;
@@ -154,7 +156,8 @@ bool thread_pool::work_function(const url_item& new_url_item, std::set<std::stri
 		html_request = new https_req(new_url_item.url);
 		if (!html_request->check_url())
 		{
-			std::cout << "bad url: " << new_url_item.url << " - mark it as invalid\n";
+			std::string out_str = "bad url: " + new_url_item.url + " - mark it as invalid\n";
+			std::cout << out_str;
 			delete html_request;
 			return false;
 		}
@@ -166,7 +169,7 @@ bool thread_pool::work_function(const url_item& new_url_item, std::set<std::stri
 		{
 		case request_result::req_res_ok:
 		{
-			if (new_url_item.url_depth < max_depth)
+			if (new_url_item.url_depth < (max_depth -1))
 			{
 				std::string base_host = my_html_parser.get_base_host(new_url_item.url);
 				new_urls_set.clear();

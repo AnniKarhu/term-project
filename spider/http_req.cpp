@@ -67,7 +67,7 @@ bool http_req::get_page()
 
 		// Receive the HTTP response
 		http::read(stream, buffer, res);
-
+		
 		fill_response_fields(res);
 
 		// Gracefully close the socket
@@ -92,12 +92,19 @@ void http_req::fill_response_fields(http::response<http::dynamic_body>& res)
 {
 	request_res = static_cast<request_result>(res.result_int()); //response code from url
 
-	//if (request_res == request_result::req_res_ok)
-	//{
+	
 		switch (request_res)
 		{
 		case request_result::req_res_ok: {
-				html_body_str = boost::beast::buffers_to_string(res.body().data());
+				auto type_res = res.find("Content-Type");
+				auto type_res_value = (*type_res).value();
+				if (type_res_value.find("text/html") == std::string::npos)
+				{
+					request_res = request_result::req_res_other;
+
+				}
+			
+				html_body_str = boost::beast::buffers_to_string(res.body().data());				
 				break;
 			}
 
@@ -108,5 +115,5 @@ void http_req::fill_response_fields(http::response<http::dynamic_body>& res)
 			}
 		
 		}
-	//}
+	
 }

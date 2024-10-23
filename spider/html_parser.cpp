@@ -62,8 +62,9 @@ std::string html_parser::get_base_path(const std::string& in_str)
 std::set<std::string> html_parser::get_urls_from_html(const std::string& html_body_str, const std::string& base_str)
 {
     std::set<std::string> urls_set;
+    //std::cout << "1" << "\n";
     
-    продолжить здесь - ускорить работу функции:
+    /*продолжить здесь - ускорить работу функции:
     1. Найти тег <title></title> - забрать слова из середины, можно регулярными выражениями
     2. Найти тег <body >. Найти - сначала позицию <body, или Б < body> - удалить всю строку до этого тега
     3. функция поиска любого тега <> - первого попавшегося в начале строки - по поиску std::string find - поиск < затем поиск > затем снова поиск <
@@ -76,31 +77,45 @@ std::set<std::string> html_parser::get_urls_from_html(const std::string& html_bo
         
     7. удалить все повторяющиеся пробелы, табуляции, знаки препинания, переводы строки
         8. Перевести все в нижний регистр
-        9. Скормить строку в map с подсчетом повторений слов
+        9. Скормить строку в map с подсчетом повторений слов*/
 
     //привести html к более валидному виду    
-    std::string s2 = std::regex_replace(html_body_str, std::regex("\n|\t| {2,}"), " ");
+   
+    //std::cout << "2\n";
+    std::string s2 = std::regex_replace(html_body_str, std::regex("\n"), " ");
+    s2 = std::regex_replace(s2, std::regex("\t"), " ");
+    s2 = std::regex_replace(s2, std::regex(" {2,}"), " ");
+
     s2 = std::regex_replace(s2, std::regex("< /"), "</");
+   // std::cout << "3 \n";
     s2 = std::regex_replace(s2, std::regex("</ "), "</");
+   // std::cout << "4 \n";
     s2 = std::regex_replace(s2, std::regex("< a"), "<a");
+    //std::cout << "5 \n";
     s2 = std::regex_replace(s2, std::regex("'"), "\"");
+    //std::cout << "6 \n";
     s2 = std::regex_replace(s2, std::regex(" ?= ?"), "=");
+    //std::cout << "7 \n";
    // std::cout << "s2 string = " << s2 << "\n\n";
 
     //поиск ссылок <a href>
     std::smatch res1;
     std::regex r1("<a (.?[^>]*?)href=\"(.*?)\"");
-
+    //std::cout << "8 \n";
     while (regex_search(s2, res1, r1))
     {
+       // std::cout << "9 \n";
         //std::cout << "\n\n";
         std::string find_str = res1.str();
        // std::cout << "find_str: " << find_str << std::endl; 
-        
+        //std::cout << "10 \n";
         std::string url_str = std::regex_replace(find_str, std::regex("<a (.?[^>]*?)href=\""), ""); //удалить все атрибуты между именем a и атрибутом href
+       // std::cout << "11 \n";
         url_str = std::regex_replace(url_str, std::regex("\""), ""); //удалить все кавычки
+       // std::cout << "12 \n";
         url_str = std::regex_replace(url_str, std::regex("/$"), ""); //удалить слеш в конце строки
-       // std::cout << "url_str = " << url_str << "\n";
+        //std::cout << "13 \n";
+        // std::cout << "url_str = " << url_str << "\n";
 
         std::string new_base_path = get_base_path(url_str); //найти базовую часть пути
         //std::cout << "new_base_path = " << new_base_path << "\n";
@@ -110,13 +125,14 @@ std::set<std::string> html_parser::get_urls_from_html(const std::string& html_bo
 
         std::string final_url = complete_url(new_base_path, base_str) + suf_str; //финальный вид урла
        // std::cout << "final_url = " << final_url << "\n";
-
+       // std::cout << "14 \n";
        // std::string out_str = "New iter: " + final_url + "\n"; // std::endl;
        // std::cout << out_str;
         urls_set.insert(final_url);
         s2 = res1.suffix(); //продолжить поиск в оставшейся части
+       // std::cout << "15 \n";
     };   
-    
+    //std::cout << "16 \n";
     //std::set<std::string> urls_set;
     return urls_set;
 }

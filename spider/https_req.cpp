@@ -31,14 +31,15 @@ bool https_req::get_page()
         http::request<http::string_body> req{ http::verb::get, target, version };
         req.set(http::field::host, host);
         req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+        req.set(http::field::accept, "text/html");
 
         // Send the HTTP request to the remote host
         http::write(stream, req);
        
         beast::flat_buffer buffer; // This buffer is used for reading and must be persisted
         http::response<http::dynamic_body> res;// Declare a container to hold the response        
-        http::read(stream, buffer, res);// Receive the HTTP response
-
+        http::read(stream, buffer, res);// Receive the HTTP response        
+        
         fill_response_fields(res);
              
 
