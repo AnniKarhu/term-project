@@ -175,6 +175,11 @@ bool thread_pool::work_function(const url_item& new_url_item, std::set<std::stri
 				new_urls_set.clear();
 				new_urls_set = my_html_parser.get_urls_from_html(html_request->get_html_body_str(), base_host);
 
+				std::string text_str = my_html_parser.clear_tags(html_request->get_html_body_str());
+				std::cout << text_str << "\n____________________\n";
+
+				text_str - записать все слова в map
+					проверить, почему ссылки добавляются с двойными слешами
 
 				if (new_urls_set.size() == 0)
 				{
@@ -189,6 +194,7 @@ bool thread_pool::work_function(const url_item& new_url_item, std::set<std::stri
 
 			new_word_map.clear();
 			new_word_map = get_words_from_html_page();
+			
 			break;
 		}
 		case request_result::req_res_redirect:
