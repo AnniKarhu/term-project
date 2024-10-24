@@ -61,8 +61,7 @@ std::string html_parser::get_base_path(const std::string& in_str)
 
 std::set<std::string> html_parser::get_urls_from_html(const std::string& html_body_str, const std::string& base_str)
 {    
-    std::set<std::string> urls_set;
-       
+    std::set<std::string> urls_set;       
     
     std::string s2 = html_body_str;
 
@@ -90,7 +89,7 @@ std::string html_parser::clear_tags(const std::string& html_body_str)
 {
     std::string s2 = html_body_str;
 
-    s2 = test_html_str;
+    //s2 = test_html_str;
 
     s2 = std::regex_replace(s2, std::regex("\n"), " ");
     s2 = std::regex_replace(s2, std::regex("\t"), " ");
@@ -123,10 +122,15 @@ std::string html_parser::clear_tags(const std::string& html_body_str)
     }
 
     //удалить все до тега body
-    regex_str = "(.*?)<body>";
+   // regex_str = "(.*?)<body>";
+    regex_str = ("^.+?(<body)");
+
+   // std::cout << "\n\n_______________s2\n" << s2;
+
     s2 = std::regex_replace(s2, std::regex(regex_str), "");
    // std::cout << "s2 no body :\n" << s2 << "\n\n";
-
+    
+   // std::cout << "\n\n_______________s2\n" << s2;
 
     regex_str = "<(.?)[^>][^<]*>";    
    // std::regex r1("<(.?)[^>][^<]*>");
@@ -138,13 +142,19 @@ std::string html_parser::clear_tags(const std::string& html_body_str)
 
     res_str += " ";
     res_str += s2;
-    ;
+    
 
-    res_str = std::regex_replace(res_str, std::regex("([.,:;-_~#$%^&*+=!?\\\"'])"), " ");
-    std::cout << "res str = \n" << res_str << "\n\n\n";
+    //res_str = std::regex_replace(res_str, std::regex("([.,:;-_~#$%^&*+=!?\\\"'])"), " ");
+    //std::cout << "res str = \n" << res_str << "\n\n\n";
+    res_str = std::regex_replace(res_str, std::regex("([\.,:;!?\\\"'*+=_~#$%^&])"), " "); //убрать знаки препинания и спец символы
+    res_str = std::regex_replace(res_str, std::regex(" {2,}"), " "); //убрать лишние пробелы
+    
+    //все строчные
+    std::transform(res_str.begin(), res_str.end(), res_str.begin(),
+        [](unsigned char c) { return std::tolower(c); });
 
-    res_str = std::regex_replace(res_str, std::regex(" {2,}"), " ");
-    std::cout << "res str = \n" << res_str << "\n\n\n";
+    //res_str = std::regex_replace(res_str, std::regex(" {2,}"), " ");
+   // std::cout << "res str = \n" << res_str << "\n\n\n";
     return res_str;
 }
 
@@ -174,4 +184,41 @@ std::string html_parser::get_base_host(const std::string& url_str)
     }
 
     return http_prefix + res_str;
+}
+
+//void html_parser::collect_words(const std::string& text_str, std::map<std::string, unsigned  int>& words_map)
+std::map<std::string, unsigned  int> html_parser::collect_words(const std::string& text_str)
+{
+    std::string search_str = text_str;   
+
+    //извлечь следующее слово
+    std::smatch res;
+    std::regex r("(.[^ ]*)");
+
+    std::map<std::string, unsigned  int> words_map;
+
+        while (regex_search(search_str, res, r))
+        {
+            std::string find_str = res.str();        
+            find_str = std::regex_replace(find_str, std::regex(" "), ""); 
+
+            int len = find_str.size();
+            if ((len >= min_word_len) && (len <= max_word_len))
+            {
+                auto word_pair = words_map.find(find_str);
+                if (word_pair != words_map.end())
+                {
+                   // int words_count = words_map[find_str] + 1;
+                    words_map[find_str] = words_map[find_str] + 1;//words_count;                   
+                }
+                else
+                {
+                    words_map[find_str] = 1;
+                }
+            }
+
+            search_str = res.suffix();   
+        };
+
+        return words_map;
 }

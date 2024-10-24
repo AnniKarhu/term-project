@@ -135,7 +135,7 @@ void Spider::start_spider() //старт паука
 
 void Spider::start_spider_threads() //старт пула потоков паука
 {
-	thread_pool urls_thread_pool(start_url, search_depth, max_threads_num, empty_thread_sleep_time);	
+	thread_pool urls_thread_pool(start_url, search_depth, max_threads_num, empty_thread_sleep_time, min_word_length, max_word_length);	
 	urls_thread_pool.start_threads_work();
 
 //	html_parser my_html_parser;

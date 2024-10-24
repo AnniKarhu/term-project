@@ -34,7 +34,22 @@ bool http_req::check_url()
 	std::cout << "host = " << host << std::endl;;
 	std::cout << "target = " << target << std::endl;
 
+	if (url_is_forbidden(full_url))
+		return false;
+
 	return true;
+}
+
+bool http_req::url_is_forbidden(std::string check_url)
+{
+	for (auto& el : forbidden_urls)
+	{
+		if (check_url.find(el) != std::string::npos)		
+			return true;
+	}
+
+	return false;
+
 }
 
 bool http_req::get_page()

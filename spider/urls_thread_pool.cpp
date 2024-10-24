@@ -3,27 +3,27 @@
 #include "urls_thread_pool.h"
 #include "https_req.h"
 
-thread_pool::thread_pool(const std::string& start_url, unsigned int _max_depth, const int max_threads_num,  const int empty_thread_sleep_time)
+thread_pool::thread_pool(const std::string& start_url, unsigned int _max_depth, const int max_threads_num,  const int empty_thread_sleep_time, const int min_word_len, const int max_word_len)
 {	
 		std::cout << "main thread id = " << std::this_thread::get_id() << std::endl;
 		const auto cores = std::thread::hardware_concurrency();
 		std::cout << "Total threads number = " << cores << "\n";
 		
 		pool_queue.empty_sleep_for_time = empty_thread_sleep_time;
+		my_html_parser.min_word_len = min_word_len;
+		my_html_parser.max_word_len = max_word_len;
 
-		int cores_num = ((cores - 1) < max_threads_num ? (cores - 1) : max_threads_num);
+		int cores_num = ((cores - 1) < max_threads_num ? (cores - 1) : max_threads_num); //1 основной поток
 		std::cout << "Work threads number = " << cores_num << "\n";
 
-		//for (int i = 0; i < cores - 1; ++i) //1 основной поток		
 		for (int i = 0; i < cores_num; ++i) 
 		{
 			th_vector.push_back(url_processing_thread(std::thread(&thread_pool::work, this, i)));
 			std::cout << "work thread id = " << th_vector[i].get_id() << " created\n";
 		}
 
-			submit(url_item(start_url, 1), -1);
-			//pool_queue.set_max_depth(max_depth);
-			max_depth = _max_depth;
+		submit(url_item(start_url, 1), -1);
+		max_depth = _max_depth;
 }
 
 thread_pool::~thread_pool()
@@ -43,7 +43,6 @@ void thread_pool::work(const int& thread_index)
 		
 		std::cout <<  "start working id: " << std::this_thread::get_id() << " thread_index = " << thread_index << " \n";
 		lk.unlock();
-
 
 		while (!task_generator_finished(thread_index))
 		{
@@ -66,12 +65,15 @@ bool thread_pool::process_next_task(const int& thread_index) //  pool_queue_pop_
 
 	bool result = false;
 
-	th_vector[thread_index].in_work = true;
+	
+
 	url_item task;
-	if (pool_queue.sq_pop(task, thread_index))// (new_urls_set, new_words_map, thread_index))
+	if (pool_queue.sq_pop(task, thread_index))
 	{	
-		if (validate_task(task.url))
-		{
+			th_vector[thread_index].in_work = true;
+			//std::string out_str = "--! Thread num " + std::to_string(thread_index) + " entered process_next_task\n";
+			//std::cout << out_str;
+
 			th_vector[thread_index].thread_task = task; 
 
 			if (work_function(task, new_urls_set, new_words_map))
@@ -87,8 +89,11 @@ bool thread_pool::process_next_task(const int& thread_index) //  pool_queue_pop_
 			}
 			result = true;
 			total_pages_processed++;
-		}		
+	
+
 	}
+	//std::string out_str = "--! Thread num " + std::to_string(thread_index) + " exit process_next_task\n";
+	//std::cout << out_str;
 	th_vector[thread_index].in_work = false;
 
 	return result;
@@ -107,13 +112,13 @@ void thread_pool::start_threads_work()
 }
 
 		
-std::atomic<bool> thread_pool::task_generator_finished(const int max_threads_num)
+std::atomic<bool> thread_pool::task_generator_finished(const int thread_num)
 {
 		if (pool_queue.not_empty())
 			return false;
-
+		
 		for (auto& el : th_vector)
-		{
+		{			
 			if (el.in_work)
 				return false;			
 		}
@@ -121,7 +126,7 @@ std::atomic<bool> thread_pool::task_generator_finished(const int max_threads_num
 		return true;
 }
 
-void thread_pool::print_threads_state() //удалить после отладки?
+void thread_pool::print_threads_state() 
 {
 	std::string res_str = "_________________Threads state:\n";
 	
@@ -143,11 +148,8 @@ void thread_pool::print_threads_state() //удалить после отладк
 }
 
 
-bool thread_pool::work_function(const url_item& new_url_item, std::set<std::string> &new_urls_set,  std::map<std::string, unsigned int> &new_word_map)
+bool thread_pool::work_function(const url_item& new_url_item, std::set<std::string> &new_urls_set,  std::map<std::string, unsigned int>& new_words_map)
 {
-	//std::cout << "work_function: " <<  " url = " << new_url_item.url << " depth = " << new_url_item.url_depth << std::endl;
-
-
 	http_req* html_request = new http_req(new_url_item.url);
 
 	if (!html_request->check_url())
@@ -169,37 +171,42 @@ bool thread_pool::work_function(const url_item& new_url_item, std::set<std::stri
 		{
 		case request_result::req_res_ok:
 		{
-			if (new_url_item.url_depth < (max_depth -1))
+			if (new_url_item.url_depth <= (max_depth - 1))
 			{
 				std::string base_host = my_html_parser.get_base_host(new_url_item.url);
 				new_urls_set.clear();
 				new_urls_set = my_html_parser.get_urls_from_html(html_request->get_html_body_str(), base_host);
-
-				std::string text_str = my_html_parser.clear_tags(html_request->get_html_body_str());
-				std::cout << text_str << "\n____________________\n";
-
-				text_str - записать все слова в map
-					проверить, почему ссылки добавляются с двойными слешами
-
+				
 				if (new_urls_set.size() == 0)
 				{
-					std::cout << "no links got from page " << new_url_item.url << "\n";
-				}
-				//удалить после отладки
-				//for (auto& el : new_urls_set)
-				//{
-				//	std::cout << "new  url = " << el << " depth = " << new_url_item.url_depth +1 << "\n";
-				//}
+					std::string out_str = "no links got from page " + new_url_item.url + "\n";
+					std::cout << out_str;
+				}				
 			}
+			
+			std::string text_str = my_html_parser.clear_tags(html_request->get_html_body_str());				
+			new_words_map.clear();
+			new_words_map = my_html_parser.collect_words(text_str);
 
-			new_word_map.clear();
-			new_word_map = get_words_from_html_page();
+				//удалить после отладки
+				/*std::cout << text_str << "\n\nprint word map____________________\n";
+				for (auto& el : words_map)
+				{
+					std::string word = el.first;
+					int num = el.second;
+
+					std::cout << word << " - " << num << "\n";
+				}
+				std::cout << text_str << "\nend word map____________________\n\n";*/	
+
+			
 			
 			break;
 		}
 		case request_result::req_res_redirect:
 		{
 			std::string redirection_url = html_request->get_redirected_location();
+			//std::string redirection_url = html_request->get_redirected_location();
 			new_urls_set.insert(redirection_url); // (html_request->get_redirected_location());
 			//удалить после отладки
 			for (auto& el : new_urls_set)
@@ -222,13 +229,7 @@ bool thread_pool::work_function(const url_item& new_url_item, std::set<std::stri
 	return true;
 }
 
-std::map<std::string, unsigned int> thread_pool::get_words_from_html_page()
-{
-	std::map<std::string, unsigned int> new_word_map;
 
-	//продолжить здесь
-	return new_word_map;
-}
 
 std::string thread_pool::get_queue_state()
 {
@@ -241,22 +242,6 @@ std::string thread_pool::get_queue_state()
 	return res_str;
 }
 
-bool thread_pool::validate_task(const std::string& new_task) //запретить загружать страницы, не являющиеся html/text
-{
-	
-	//нужно бы сделать проверку на тип файла, чтобы не скачивать лишние архивы, установочные файлы и т.п.
-	//но видимо, это выходит за рамки дипломной работы
-	return true;
-	
-	//std::vector<std::string> forbidden_str{ "zip", ".rar", "7z", ".doc", ".docx", ".xls", ".xlsx" }; //		ZIP, ARJ, RAR, CAB, TAR, LZH
-	
-	std::smatch res;
-	std::string regex_str = "";
-	std::regex r(regex_str);
-
-	if (regex_search(new_task, res, r))
-		return false;
-}
 
 
 

@@ -2,8 +2,8 @@
 
 #include <iostream>
 #include <regex>
-//#include <boost/regex.hpp>
 #include <set>
+#include <map>
 
 const std::string test_html_str = "<!doctype html>< html ><head><title>Example Domain< / title><meta charset = 'utf-8' / >"
 "<meta http - equiv = Content-type content = text/html; charset=utf-8 / >"
@@ -21,16 +21,19 @@ const std::string test_html_str = "<!doctype html>< html ><head><title>Example D
 
 class html_parser
 {
-private:
+private:	
 	std::string complete_url(const std::string& in_url, const std::string& url_base);
 	std::string get_base_path(const std::string& in_str);
 
 public:
+	int max_word_len = 32;
+	int min_word_len = 3;
+	
 	std::string get_base_host(const std::string& url_str);
 	std::set<std::string> get_urls_from_html(const std::string& html_body_str, const std::string& base_str);
-	std::string clear_tags(const std::string& html_body_str);
-
-	//bool get_next_tag_string(const std::string& html_body_str, std::string& tag_str, int& tag_pos); //поиск любого первого тега в строке
-	//bool is_my_tag(const std::string& tag_str, const std::string tag_name); //является ли строка тегом с именем тега tag_name
-	//bool attribute_in_tag(const std::string& tag_str, const std::string attr_name); //есть ли атрибут attr_name внутри тега
+	std::string clear_tags(const std::string& html_body_str);	
+	
+	//void collect_words(const std::string& text_str, std::map<std::string, unsigned  int>& words_map);
+	std::map<std::string, unsigned  int> collect_words(const std::string& text_str);
+	
 };

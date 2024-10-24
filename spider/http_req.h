@@ -7,11 +7,15 @@
 #include <cstdlib>
 #include <iostream>
 #include <string>
+#include <vector>
 
 namespace beast = boost::beast;     // from <boost/beast.hpp>
 namespace http = beast::http;       // from <boost/beast/http.hpp>
 namespace net = boost::asio;        // from <boost/asio.hpp>
 using tcp = net::ip::tcp;           // from <boost/asio/ip/tcp.hpp>
+
+
+
 
 enum class request_result
 {
@@ -29,6 +33,8 @@ protected:
 	virtual const std::string port() { return "80"; }	
 	virtual const std::string url_start() 	{ 	return "http://"; 	}
 	
+	std::vector<std::string> forbidden_urls{ "instagram.com", "facebook.com",  };
+	
 	std::string host;
 	std::string target;
 	const int version = 11;
@@ -41,7 +47,7 @@ protected:
 
 private:
 	std::string full_url;	
-	
+	bool url_is_forbidden(std::string check_url);
 	 
 public:
 

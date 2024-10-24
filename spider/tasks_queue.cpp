@@ -21,10 +21,10 @@ void tasks_queue::sq_push(const url_item& new_url_item, const int work_thread_nu
 		if (list_of_urls.size() > queue_length)
 		{
 			urls_queue.push(new_url_item);
-			std::cout << "New url added: url = " << new_url_item.url << " depth = " << new_url_item.url_depth << "\n";
+			//std::cout << "New url added: url = " << new_url_item.url << " depth = " << new_url_item.url_depth << "\n";
 		}
 				
-		//std::cout << "new task added: " << new_url_item.url	<< " depth = " << new_url_item.url_depth << "\n";
+		std::cout << "new task added: " << new_url_item.url	<< " depth = " << new_url_item.url_depth << "\n";
 		data_cond.notify_all();
 		//std::cout << "Thread " << work_thread_num << " release queue_mutex\n";
 }
