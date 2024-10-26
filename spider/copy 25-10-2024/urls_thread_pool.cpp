@@ -24,6 +24,7 @@ thread_pool::thread_pool(const std::string& start_url, unsigned int _max_depth, 
 
 		submit(url_item(start_url, 1), -1);
 		max_depth = _max_depth;
+		this_host_only = 
 }
 
 thread_pool::~thread_pool()
@@ -63,9 +64,7 @@ bool thread_pool::process_next_task(const int& thread_index) //  pool_queue_pop_
 	std::set<std::string> new_urls_set;
 	std::map<std::string, unsigned int> new_words_map;
 
-	bool result = false;
-
-	
+	bool result = false;	
 
 	url_item task;
 	if (pool_queue.sq_pop(task, thread_index))
@@ -78,6 +77,8 @@ bool thread_pool::process_next_task(const int& thread_index) //  pool_queue_pop_
 
 			if (work_function(task, new_urls_set, new_words_map))
 			{
+				//добавить пройденнй url и список слов в базу данных
+				
 				for (auto& el : new_urls_set)
 				{
 					pool_queue.sq_push(url_item(el, task.url_depth + 1), thread_index);
@@ -150,6 +151,7 @@ void thread_pool::print_threads_state()
 
 bool thread_pool::work_function(const url_item& new_url_item, std::set<std::string> &new_urls_set,  std::map<std::string, unsigned int>& new_words_map)
 {
+		
 	http_req* html_request = new http_req(new_url_item.url);
 
 	if (!html_request->check_url())
@@ -175,7 +177,7 @@ bool thread_pool::work_function(const url_item& new_url_item, std::set<std::stri
 			{
 				std::string base_host = my_html_parser.get_base_host(new_url_item.url);
 				new_urls_set.clear();
-				new_urls_set = my_html_parser.get_urls_from_html(html_request->get_html_body_str(), base_host);
+				new_urls_set = my_html_parser.get_urls_from_html(html_request->get_html_body_str(), base_host, this_host_only, new_url_item.url);
 				
 				if (new_urls_set.size() == 0)
 				{
@@ -229,8 +231,6 @@ bool thread_pool::work_function(const url_item& new_url_item, std::set<std::stri
 	return true;
 }
 
-
-
 std::string thread_pool::get_queue_state()
 {
 	std::string res_str = "\n________Indexing state:\n";
@@ -241,6 +241,19 @@ std::string thread_pool::get_queue_state()
 
 	return res_str;
 }
+
+//bool thread_pool::check_this_host_only(const std::string& needed_host, const std::string& url_str) //проверка, является ли урл требуемым хостом
+//{
+//	if (!(this_host_only)) return true; //не нужна проверка
+//
+//	if (url_str.find(needed_host) != 0)
+//	{
+//		return false;
+//	}
+//	else
+//		return true;
+//	
+//}
 
 
 

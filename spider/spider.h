@@ -1,55 +1,77 @@
-#pragma once
-
+п»ї#pragma once
 #include <iostream>
+#include <vector>
+#include <thread>
 #include <string>
-#include <map>
 #include <set>
+#include <map>
 
 #include "data_base.h"
-#include "spider_data.h"
+//#include "spider_data.h"
+#include "tasks_queue.h"
+#include "html_parser.h"
 
-
-class Spider
+struct Search_parameters
 {
-private:
-	//корректность запуска спайдера
-	bool spider_invalid = false; //есть проблемы с пауком
-	Data_base* data_base = nullptr;
-
-	// information on urls
-	//std	start_url = https://www.google.com/
-
+	std::string start_url;
 	int	search_depth = 1;
 	int	min_word_length = 3;
 	int	max_word_length = 32;
 	int max_threads_num = 0;
 	int empty_thread_sleep_time = 100;
+	bool this_host_only = false;
 	std::string db_connection_string;
-	std::string start_url;
-
-
-private:
-	//список урлов для индексации
-	std::set<std::string>* urls_queue = nullptr;
-
-	bool test_database(); //только для отладки - удалить
-	void test_get_html(); //только для отладки - удалить
-	
-public:
-	
-	Spider()  noexcept;
-	Spider(const Spider& other);				// конструктор копирования	
-	Spider& operator = (const Spider& other);	// оператор копирующего присваивания
-	Spider(Spider&& other) noexcept;			// конструктор перемещения
-	Spider& operator=(Spider&& other) noexcept; // оператор перемещающего присваивания
-	~Spider();
-
-	bool prepare_spider(Spider_data start_data); //подготовка  паука к работе
-	void start_spider(); //старт паука
-	void start_spider_threads(); //старт пула потоков паука
-
-	//создать 1 или 2 класса для скачивания страниц по http и https
-	//	не забыть анализировать заголовки и возможные редиректы
-	//	поиск ссылок https ://www.cyberforum.ru/boost-cpp/thread2383592.html
-
 };
+
+//class Spider;
+
+class url_processing_thread : public std::thread
+{
+public:		
+	bool in_work = false;
+	url_item thread_task;
+};
+
+class Spider //thread_pool
+{
+private:
+	
+	bool spider_invalid = false; //РµСЃС‚СЊ РїСЂРѕР±Р»РµРјС‹ СЃ РїР°СѓРєРѕРј
+	Data_base* data_base = nullptr;
+	std::string db_connection_string;
+	//Search_parameters search_parameters;
+	
+	unsigned int max_depth = 0;
+	bool this_host_only = 0;   
+	int total_pages_processed = 0;
+	std::vector<url_processing_thread> th_vector;
+
+	tasks_queue  pool_queue;	
+	html_parser my_html_parser;
+	
+	std::atomic<bool> task_generator_finished(const int max_threads_num);
+	bool start_work = false;
+	
+	std::mutex start_mutex;
+	std::condition_variable start_threads;
+	void submit(const url_item new_url_item, const int work_thread_num); //РґРѕР±Р°РІР»РµРЅРёРµ Р°РґСЂРµСЃР° РІ РѕС‡РµСЂРµРґСЊ
+	
+	void work(const int& thread_index); //СЂР°Р±РѕС‡Р°СЏ С„СѓРЅРєС†РёСЏ РїРѕС‚РѕРєРѕРІ
+	bool process_next_task(const int& thread_index); 
+	bool work_function(const url_item& new_url_item, std::set<std::string>& new_urls_set, std::map<std::string, unsigned  int>& new_words_map);
+	
+public:	
+
+	Spider(Search_parameters spider_data);
+	~Spider();	
+
+	std::string get_queue_state();
+	std::string get_threads_state();	
+
+	void print_urls_list();
+	
+
+	void start_threads_work(); //СЃС‚Р°СЂС‚ СЂР°Р±РѕС‡РёС… РїРѕС‚РѕРєРѕРІ	
+};
+
+

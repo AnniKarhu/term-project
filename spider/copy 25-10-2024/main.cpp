@@ -7,6 +7,7 @@
 
 #include "ini_parser.h"
 #include "spider.h"
+#include "spider_data.h"
 
 const std::string ini_file_name = "spider.ini";
 const std::string spider_not_ready_str = "Spider is not ready to work.";
@@ -23,8 +24,7 @@ int main()
 	ini_parser parser;
 	parser.fill_parser(ini_file_name);
 
-	//Spider_data spider_data;
-	Search_parameters spider_data;
+	Spider_data spider_data;
 	try
 	{
 		spider_data.start_url = parser.get_value<std::string>("URLs.start_url");
@@ -39,9 +39,11 @@ int main()
 		spider_data.max_word_length = parser.get_value<int>("Search_settings.max_word_length");
 		spider_data.min_word_length = parser.get_value<int>("Search_settings.min_word_length");		
 
-		spider_data.max_threads_num = parser.get_value<int>("Process_settings.max_threads");
+		spider_data.threads_num = parser.get_value<int>("Process_settings.max_threads");
 		spider_data.empty_thread_sleep_time = parser.get_value<int>("Process_settings.empty_thread_sleep_time");
-		spider_data.this_host_only = parser.get_value<bool>("Process_settings.this_host_only");		
+		spider_data.this_host_only = parser.get_value<bool>("Process_settings.this_host_only");
+
+		
 	}
 	catch (const ParserException_no_file& ex)
 	{
@@ -61,8 +63,9 @@ int main()
 		std::cout << spider_not_ready_str << "\n";
 		return 0;
 	}
+
 			
-	std::cout << "Indexing information:__________ " << std::endl;
+	std::cout << "URLs information: " << std::endl;
 	std::cout << "Start url = " << spider_data.start_url << "\n\n";
 	std::cout << "Indexing settings: "  << std::endl;
 	std::cout << "Search_depth = " << spider_data.search_depth << "\n";
@@ -70,9 +73,19 @@ int main()
 	std::cout << "Maximum word length for indexing = " << spider_data.max_word_length << "\n\n";	
 	std::cout << "Database settings: " << spider_data.db_connection_string << std::endl;		
 	
-	Spider spider(spider_data);	
-	std::cout << "Start indexing from " << spider_data.start_url << std::endl;		
-	spider.start_threads_work(); //старт пула потоков паука			
+	Spider spider;
+	if (!spider.prepare_spider(spider_data))
+	{
+		std::cout << spider_not_ready_str << "\n";
+		return 0;
+	}
+	else
+	{
+		std::cout << "Start indexing from " << spider_data.start_url << std::endl;
+		//spider.start_spider(); //старт паука
+		spider.start_spider_threads(); //старт пула потоков паука
+	}
+				
 
 	
 

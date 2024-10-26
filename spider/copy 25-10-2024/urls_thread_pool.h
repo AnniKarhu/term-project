@@ -15,7 +15,6 @@ class url_processing_thread : public std::thread
 {
 public:		
 	bool in_work = false;
-	//int thread_num = -1;
 	url_item thread_task;
 };
 
@@ -41,11 +40,11 @@ private:
 	bool process_next_task(const int& thread_index); //pool_queue_pop_next();
 	bool work_function(const url_item& new_url_item, std::set<std::string>& new_urls_set, std::map<std::string, unsigned  int>& new_words_map);
 	
-
-	
-
 public:	
 	
+	bool this_host_only = false;
+
+	//thread_pool(const std::string& start_url, unsigned int _max_depth, const int max_threads_num, const int empty_thread_sleep_time, const int min_word_len, const int max_word_len);
 	thread_pool(const std::string& start_url, unsigned int _max_depth, const int max_threads_num, const int empty_thread_sleep_time, const int min_word_len, const int max_word_len);
 	~thread_pool();	
 

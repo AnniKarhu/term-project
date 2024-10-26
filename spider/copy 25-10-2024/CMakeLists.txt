@@ -12,15 +12,16 @@ set (BOOST_ALL_DYN_LINK OFF)
 set(PostgreSQL_ADDITIONAL_VERSIONS "16")
 
 set(SOURCE_FILES "main.cpp" 
-				
-				 "spider.h" "spider.cpp"
+				 "spider.h" "spider.cpp" "spider_data.h" 
 				 "ini_parser.h" "ini_parser.cpp" "parser_exceptions.h"
 				 "data_base.h" "data_base.cpp" 
 				 "http_req.h" "http_req.cpp"
 				 "https_req.h" "https_req.cpp" "root_certificates.hpp"
-				 "tasks_queue.h" "tasks_queue.cpp"				 
+
+				 "tasks_queue.h" "tasks_queue.cpp"
+				 "urls_thread_pool.h" "urls_thread_pool.cpp"
 				 "html_parser.h" "html_parser.cpp"
-				 #"user_interface.h" "user_interface.cpp" 
+				# "user_interface.h" "user_interface.cpp" 
 				 
 				 )
 

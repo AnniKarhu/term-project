@@ -41,21 +41,17 @@ std::set<std::string> html_parser::get_urls_from_html(const std::string& html_bo
         std::string url_str = std::regex_replace(find_str, std::regex("<a (.?[^>]*?)href=\""), ""); //удалить все атрибуты между именем a и атрибутом href
         url_str = std::regex_replace(url_str, std::regex("\""), ""); //удалить все кавычки
         url_str = std::regex_replace(url_str, std::regex("/$"), ""); //удалить слеш в конце строки       
-        std::string new_base_path = get_base_path(url_str); //найти базовую часть пути  
-        
+        std::string new_base_path = get_base_path(url_str); //найти базовую часть пути 
+        if (!check_this_host_only(host_url, new_base_path, this_host_only))
+        {
+            continue;
+        }
         
         std::string suf_str = url_str.erase(0, new_base_path.size()); //найти имя страницы или скрипта       
         std::string final_url = complete_url(new_base_path, base_str) + suf_str; //финальный вид урла
-      
-        if (check_this_host_only(host_url, final_url, this_host_only))
-        {
-             urls_set.insert(final_url);
-        }  
-        /*else
-        {
-            std::cout << "foreign url not added " << final_url << "\n";
-        }*/
        
+       
+        urls_set.insert(final_url);
         s2 = res1.suffix(); //продолжить поиск в оставшейся части      
     };     
     return urls_set;

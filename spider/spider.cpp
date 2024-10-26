@@ -1,152 +1,231 @@
+п»ї#include <regex>
 
-#include "spider.h"
-#include "https_req.h"
-#include "urls_thread_pool.h"
+#include "Spider.h"
+#include "https_req.h" 
 
-Spider::Spider()  noexcept
-{	
-	
+Spider::Spider(Search_parameters spider_data)
+{		
+		db_connection_string = spider_data.db_connection_string;
+		pool_queue.empty_sleep_for_time = spider_data.empty_thread_sleep_time;
+		max_depth = spider_data.search_depth;
+		this_host_only = spider_data.this_host_only;
+		
+		my_html_parser.min_word_len = spider_data.min_word_length;
+		my_html_parser.max_word_len = spider_data.max_word_length;		
+
+		const auto cores = std::thread::hardware_concurrency();
+		std::cout << "Total threads number = " << cores << "\n";
+		int cores_num = ((cores - 1) < spider_data.max_threads_num ? (cores - 1) : spider_data.max_threads_num); //1 РѕСЃРЅРѕРІРЅРѕР№ РїРѕС‚РѕРє
+		std::cout << "Work threads number = " << cores_num << "\n";
+
+		for (int i = 0; i < cores_num; ++i) 
+		{
+			th_vector.push_back(url_processing_thread(std::thread(&Spider::work, this, i)));
+			std::cout << "work thread id = " << th_vector[i].get_id() << " created\n";
+		}
+
+		submit(url_item(spider_data.start_url, 1), -1);
 }
 
-Spider::Spider(const Spider& other) // конструктор копирования
-{
-	spider_invalid = other.spider_invalid; //есть ли проблемы с парсером
-	data_base = other.data_base;
-
-	urls_queue = new std::set<std::string>;
-	*urls_queue = *(other.urls_queue);	
-}
-
-	
-Spider& Spider::operator = (const Spider& other)	// оператор копирующего присваивания
-{
-	if (this != &other)
-	{
-		return *this = Spider(other);
-	}
-
-	return *this;
-}
-
-Spider::Spider(Spider&& other) noexcept			// конструктор перемещения
-{
-	spider_invalid = other.spider_invalid; //есть ли проблемы с пауком
-	
-	urls_queue = other.urls_queue;
-	other.urls_queue = nullptr;	
-
-	data_base = other.data_base;
-	other.data_base = nullptr;
-
-}
-
-Spider& Spider::operator=(Spider&& other) noexcept // оператор перемещающего присваивания
-{
-	return *this = Spider(other);
-}
 
 Spider::~Spider()
 {
-	delete urls_queue;
-	delete data_base;
+		for (auto& el : th_vector)
+		{				
+			auto thr_id = el.get_id();  			
+			el.join();			
+			std::cout << "work thread id = " << thr_id << " finished\n";
+		}	
+
+		std::cout << "\nIndexing finished. Total " << pool_queue.list_of_urls.size() << " pages were processed:\n";
+		print_urls_list();
 }
 
-bool Spider::test_database() //только для отладки - удалить
+void Spider::work(const int& thread_index)
 {
-	data_base = new Data_base(db_connection_string);
-	if (data_base->start_db())
-	{
-		std::cout << "db started" << "\n";
-	}
-	else
-	{
-		std::cout << "db not started" << "\n";
-		data_base->print_last_error(); //вывести информацию о последней ошибке
-		spider_invalid = true; //есть проблемы с пауком
-		std::cout << "Further work is impossible. The program will be closed.\n";
-		return false;
-	}
+		std::unique_lock lk(start_mutex);		
+		start_threads.wait(lk, [this] {return start_work; });
+		
+		std::cout <<  "start working id: " << std::this_thread::get_id() << " thread_index = " << thread_index << " \n";
+		lk.unlock();
 
-	try
-	{		
-		if (!data_base->test_insert())
+		while (!task_generator_finished(thread_index))
 		{
-			std::cout << "test insert failed: " << data_base->get_last_error_desc();
-		}
-	}
-	catch (...)
-	{
-		std::cout << "test insert failed, unknown reason" << "\n";
-	}
+			if (process_next_task(thread_index)) 
+			{
+				lk.lock();					
+					std::cout << get_queue_state();					
+				lk.unlock();
+				std::cout << get_threads_state();
+			}			
+		}		
 }
 
-void Spider::test_get_html() //только для отладки - удалить
+bool Spider::process_next_task(const int& thread_index) 
 {
-	if (!urls_queue)
-	{
-		spider_invalid = true; //есть проблемы с пауком
-		return;
-	}
+	std::set<std::string> new_urls_set;
+	std::map<std::string, unsigned int> new_words_map;
 
-	for (auto const& url : *urls_queue)
+	bool result = false;	
+
+	url_item task;
+	if (pool_queue.sq_pop(task, thread_index))
+	{	
+			th_vector[thread_index].in_work = true;
+			th_vector[thread_index].thread_task = task; 
+
+			if (work_function(task, new_urls_set, new_words_map))
+			{
+				//РґРѕР±Р°РІРёС‚СЊ РїСЂРѕР№РґРµРЅРЅР№ url Рё СЃРїРёСЃРѕРє СЃР»РѕРІ РІ Р±Р°Р·Сѓ РґР°РЅРЅС‹С…
+				
+				for (auto& el : new_urls_set)
+				{
+					pool_queue.sq_push(url_item(el, task.url_depth + 1), thread_index);
+				}
+
+				std::string out_str = "url " + task.url + " " + std::to_string(task.url_depth) + " thread " + std::to_string(thread_index) + " finished\n";
+				std::cout << out_str;
+				std::cout << get_queue_state();				
+			}
+			result = true;
+			total_pages_processed++;
+	}
+	
+	th_vector[thread_index].in_work = false;
+
+	return result;
+}
+	
+void Spider::submit(const url_item new_url_item, const int work_thread_num) //РґРѕР±Р°РІР»РµРЅРёРµ Р°РґСЂРµСЃР° РІ РѕС‡РµСЂРµРґСЊ
+{
+		pool_queue.sq_push(new_url_item, work_thread_num);
+}
+
+//СЃС‚Р°СЂС‚ СЂР°Р±РѕС‡РёС… РїРѕС‚РѕРєРѕРІ
+void Spider::start_threads_work()
+{
+		start_work = true;
+		start_threads.notify_all();
+}
+
+		
+std::atomic<bool> Spider::task_generator_finished(const int thread_num)
+{
+		if (pool_queue.not_empty())
+			return false;
+		
+		for (auto& el : th_vector)
+		{			
+			if (el.in_work)
+				return false;			
+		}
+
+		return true;
+}
+
+bool Spider::work_function(const url_item& new_url_item, std::set<std::string> &new_urls_set,  std::map<std::string, unsigned int>& new_words_map)
+{
+		
+	http_req* html_request = new http_req(new_url_item.url);
+
+	if (!html_request->check_url())
 	{
-		std::cout << "\n\nnext url = " << url << "\n";
-		http_req* html_request = new http_req(url);
+		delete html_request;
+		html_request = new https_req(new_url_item.url);
 		if (!html_request->check_url())
 		{
+			std::string out_str = "bad url: " + new_url_item.url + " - mark it as invalid\n";
+			std::cout << out_str;
 			delete html_request;
-			html_request = new https_req(url);
-			if (!html_request->check_url())
+			return false;
+		}
+	}
+
+	if (html_request->get_page())
+	{
+		switch (html_request->get_request_result())
+		{
+		case request_result::req_res_ok:
+		{
+			if (new_url_item.url_depth <= (max_depth - 1))
 			{
-				std::cout << "bad url: " << url << " - mark it as invalid\n";
-				delete html_request;
-				continue;
+				std::string base_host = my_html_parser.get_base_host(new_url_item.url);
+				new_urls_set.clear();
+				new_urls_set = my_html_parser.get_urls_from_html(html_request->get_html_body_str(), base_host, this_host_only, new_url_item.url);
+				
+				if (new_urls_set.size() == 0)
+				{
+					std::string out_str = "no links got from page " + new_url_item.url + "\n";
+					std::cout << out_str;
+				}				
 			}
+			
+			std::string text_str = my_html_parser.clear_tags(html_request->get_html_body_str());				
+			new_words_map.clear();
+			new_words_map = my_html_parser.collect_words(text_str);
+			break;
+		}
+		case request_result::req_res_redirect:
+		{
+			std::string redirection_url = html_request->get_redirected_location();
+			new_urls_set.insert(redirection_url); 
+			
+			break;
 		}
 
-		html_request->get_page();
-		std::cout << "html get result = " << int(html_request->get_request_result()) << "\n";
-
-		delete html_request;
-	}
-}
-
-bool Spider::prepare_spider(Spider_data start_data) //старт паука
-{
-	search_depth = start_data.search_depth;
-	min_word_length = start_data.min_word_length;
-	max_word_length = start_data.max_word_length;
-	db_connection_string = start_data.db_connection_string;
-	start_url = start_data.start_url;
-
-	max_threads_num = start_data.threads_num;
-	empty_thread_sleep_time = start_data.empty_thread_sleep_time;
-
-	urls_queue = new std::set<std::string>;
-	urls_queue->insert(start_data.start_url);
-		
+		default: {
+					delete html_request;
+					return false; 		
+				}
+		}
+	};
+	
+	delete html_request;
 	return true;
 }
 
-void Spider::start_spider() //старт паука
+std::string Spider::get_queue_state()
 {
-	
+	std::string res_str = "\n________Indexing state:\n";
+	res_str += "urls in queue to be processed: " + std::to_string(pool_queue.get_queue_size()) + "\n"; //    urls_queue.size()) + "\n";
+	res_str += "urls already have been processed: " + std::to_string(total_pages_processed) + "\n";
+	res_str += "total urls in list: " + std::to_string(pool_queue.list_of_urls.size()) + "\n";
+	res_str += "\n\n";
+
+	return res_str;
 }
 
-void Spider::start_spider_threads() //старт пула потоков паука
+std::string Spider::get_threads_state()
 {
-	thread_pool urls_thread_pool(start_url, search_depth, max_threads_num, empty_thread_sleep_time, min_word_length, max_word_length);	
-	urls_thread_pool.start_threads_work();
+	std::string res_str = "\n________Threads state:\n";
 
-//	html_parser my_html_parser;
+	for (int i = 0; i < th_vector.size(); ++i)
+	{
+		res_str += "Thread num " + std::to_string(i);
+		if (th_vector[i].in_work)
+		{
+			res_str += " - is in work: " + th_vector[i].thread_task.url + " depth = " + std::to_string(th_vector[i].thread_task.url_depth) + " \n";
+		}
+		else
+		{
+			res_str += " - is idle\n";
+		}
+	}
 
-	//std::string base_str;
-	//base_str = my_html_parser.get_base_host("http://www.1test.gh/fgty6.htm");
-
-
-	//my_html_parser.get_urls_from_html(" < p > <   a target  href = '/7test/' >More information...< / a>< / p>\n", base_str);
-
+	res_str += "\n";
+	return res_str;
 }
-		
+
+void Spider::print_urls_list()
+{
+	for (auto& el : pool_queue.list_of_urls)
+	{
+		std::cout << el << "\n";
+	}
+}
+
+
+
+
 
 

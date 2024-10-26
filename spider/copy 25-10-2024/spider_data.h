@@ -14,6 +14,8 @@ struct Spider_data
 	int min_word_length = 3;
 	int	max_word_length = 32;
 
+	bool this_host_only = false;
+
 	//process settings
 	int threads_num = 0; //0 - no limits, max possible threads for indexing
 	int empty_thread_sleep_time = 100;
