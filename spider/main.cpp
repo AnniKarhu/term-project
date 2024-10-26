@@ -1,10 +1,6 @@
 ﻿#include <iostream>
 #include <pqxx/pqxx> 
 #include "Windows.h"
-
-#include "data_base.h"
-//#include "user_interface.h"
-
 #include "ini_parser.h"
 #include "spider.h"
 

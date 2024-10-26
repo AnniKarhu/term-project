@@ -7,7 +7,6 @@
 #include <map>
 
 #include "data_base.h"
-//#include "spider_data.h"
 #include "tasks_queue.h"
 #include "html_parser.h"
 
@@ -39,8 +38,7 @@ private:
 	bool spider_invalid = false; //есть проблемы с пауком
 	Data_base* data_base = nullptr;
 	std::string db_connection_string;
-	//Search_parameters search_parameters;
-	
+		
 	unsigned int max_depth = 0;
 	bool this_host_only = 0;   
 	int total_pages_processed = 0;
@@ -52,26 +50,32 @@ private:
 	std::atomic<bool> task_generator_finished(const int max_threads_num);
 	bool start_work = false;
 	
-	std::mutex start_mutex;
+	std::mutex threads_start_mutex; //мьютекс старта работы потоков
 	std::condition_variable start_threads;
 	void submit(const url_item new_url_item, const int work_thread_num); //добавление адреса в очередь
 	
 	void work(const int& thread_index); //рабочая функция потоков
 	bool process_next_task(const int& thread_index); 
 	bool work_function(const url_item& new_url_item, std::set<std::string>& new_urls_set, std::map<std::string, unsigned  int>& new_words_map);
+
+	bool add_url_words_to_database(const std::string& url_str, const std::map<std::string, unsigned  int>& words_map);
 	
 public:	
 
 	Spider(Search_parameters spider_data);
 	~Spider();	
 
-	std::string get_queue_state();
-	std::string get_threads_state();	
+	Spider(const Spider& other) = delete; //конструктор копирования
+	Spider(Spider&& other) noexcept;	// конструктор перемещения
+	Spider& operator=(const Spider& other) = delete;  //оператор присваивания 
+	Spider& operator=(Spider&& other) = delete;       // оператор перемещающего присваивания
 
-	void print_urls_list();
-	
+	std::string get_queue_state(); //получить информацию о работе - очередь и пройденные урлы
+	std::string get_threads_state(); //получить информацию о рабочих потоках  - не блокирует мьютексы, поэтому может использоваться только справочно для примерного понимания, какой поток чем занят	
 
-	void start_threads_work(); //старт рабочих потоков	
+	void print_urls_list();	//вывести список всех полученных урлов
+
+	void start_threads_work(); //старт паука (подключение к базе данных и старт рабочих потоков	)
 };
 
 

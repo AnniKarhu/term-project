@@ -11,11 +11,9 @@ enum class string_type
 {
 	section_,  //название секции
 	variable_, //переменная
-	//comments_, //комментарий
 	empty_,	   //пустая строка или комментарий
 	invalid_   //строка невалидная
 };
-
 
 class ini_parser
 {
@@ -30,7 +28,7 @@ private:
 	std::string incorrect_str;  //содержимое строки с некорректным синтаксисом
 
 private:
-	//все значения буду хранить в виде строк
+	//все значения хранятся в виде строк
 	std::vector<std::map<std::string, std::string>>* variables_str_array = nullptr; //массивом мапов, которые содержат строки
 	std::map<std::string, int>* sections_map = nullptr; //соответствие названия секции номеру массива variables_str_array
 
@@ -61,7 +59,6 @@ public:
 	void check_parser();										//проверяет, нет ли в парсере проблем и выбрасывает исключение
 	void print_incorrect_info();								//вывести информацию о некорректных данных в файле		
 	std::string get_section_from_request(const std::string& request_str); //получить из строки запроса название секции
-
 
 	template <class T>
 	T get_value(const std::string& input_str)			//основная функция парсера. Шаблон запроса "Имя_секции.Имя_переменной"

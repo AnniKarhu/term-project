@@ -2,6 +2,11 @@
 
 std::string html_parser::complete_url(const std::string& in_url, const std::string& url_base)
 {
+    if (in_url.empty()) 
+    {
+        return  url_base;
+    }
+    
     std::string res_url = in_url;
     std::regex_replace(res_url, std::regex("/$"), "");
 
@@ -20,6 +25,7 @@ std::string html_parser::complete_url(const std::string& in_url, const std::stri
         res_url.erase(0, 1);
     }
    
+  
     res_url = url_base + "/" + res_url;
     
     return res_url;

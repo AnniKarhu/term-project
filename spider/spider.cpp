@@ -6,6 +6,8 @@
 Spider::Spider(Search_parameters spider_data)
 {		
 		db_connection_string = spider_data.db_connection_string;
+		data_base = new Data_base(db_connection_string);
+
 		pool_queue.empty_sleep_for_time = spider_data.empty_thread_sleep_time;
 		max_depth = spider_data.search_depth;
 		this_host_only = spider_data.this_host_only;
@@ -27,7 +29,6 @@ Spider::Spider(Search_parameters spider_data)
 		submit(url_item(spider_data.start_url, 1), -1);
 }
 
-
 Spider::~Spider()
 {
 		for (auto& el : th_vector)
@@ -37,16 +38,17 @@ Spider::~Spider()
 			std::cout << "work thread id = " << thr_id << " finished\n";
 		}	
 
+		delete data_base;
+
 		std::cout << "\nIndexing finished. Total " << pool_queue.list_of_urls.size() << " pages were processed:\n";
 		print_urls_list();
 }
 
 void Spider::work(const int& thread_index)
 {
-		std::unique_lock lk(start_mutex);		
-		start_threads.wait(lk, [this] {return start_work; });
-		
-		std::cout <<  "start working id: " << std::this_thread::get_id() << " thread_index = " << thread_index << " \n";
+		std::unique_lock lk(threads_start_mutex);
+			start_threads.wait(lk, [this] {return start_work; });		
+			std::cout <<  "start working id: " << std::this_thread::get_id() << " thread_index = " << thread_index << " \n";
 		lk.unlock();
 
 		while (!task_generator_finished(thread_index))
@@ -69,15 +71,16 @@ bool Spider::process_next_task(const int& thread_index)
 	bool result = false;	
 
 	url_item task;
-	if (pool_queue.sq_pop(task, thread_index))
+	if (pool_queue.sq_pop(task, thread_index)) //если взято новое задание
 	{	
-			th_vector[thread_index].in_work = true;
+			th_vector[thread_index].in_work = true;  //флаг, что поток в процессе работы
 			th_vector[thread_index].thread_task = task; 
 
 			if (work_function(task, new_urls_set, new_words_map))
 			{
-				//добавить пройденнй url и список слов в базу данных
+				add_url_words_to_database(task.url, new_words_map); //добавить пройденный url и список слов в базу данных
 				
+				//добавить список полученных страниц в очередь на сканирование
 				for (auto& el : new_urls_set)
 				{
 					pool_queue.sq_push(url_item(el, task.url_depth + 1), thread_index);
@@ -222,6 +225,14 @@ void Spider::print_urls_list()
 	{
 		std::cout << el << "\n";
 	}
+}
+
+bool Spider::add_url_words_to_database(const std::string& url_str, const std::map<std::string, unsigned  int>& words_map)
+{
+	bool result = false;
+
+
+	return result;
 }
 
 
