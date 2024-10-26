@@ -40,7 +40,10 @@ private:
 	std::string db_connection_string;
 		
 	unsigned int max_depth = 0;
-	bool this_host_only = 0;   
+	bool this_host_only = 0;  
+	int max_threads_num = 0;
+	std::string start_url;
+
 	int total_pages_processed = 0;
 	std::vector<url_processing_thread> th_vector;
 
@@ -52,6 +55,8 @@ private:
 	
 	std::mutex threads_start_mutex; //мьютекс старта работы потоков
 	std::condition_variable start_threads;
+
+	void start_work_threads(); //создать и запустить рабочие потоки
 	void submit(const url_item new_url_item, const int work_thread_num); //добавление адреса в очередь
 	
 	void work(const int& thread_index); //рабочая функция потоков
@@ -60,6 +65,8 @@ private:
 
 	bool add_url_words_to_database(const std::string& url_str, const std::map<std::string, unsigned  int>& words_map);
 	
+
+
 public:	
 
 	Spider(Search_parameters spider_data);
@@ -75,7 +82,7 @@ public:
 
 	void print_urls_list();	//вывести список всех полученных урлов
 
-	void start_threads_work(); //старт паука (подключение к базе данных и старт рабочих потоков	)
+	void start_spider(); //старт паука (подключение к базе данных и старт рабочих потоков	)
 };
 
 

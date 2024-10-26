@@ -1,11 +1,11 @@
-#pragma once
+п»ї#pragma once
 
 #include <iostream>
 #include <regex>
 #include <set>
 #include <map>
 
-//удалить после отладки
+//СѓРґР°Р»РёС‚СЊ РїРѕСЃР»Рµ РѕС‚Р»Р°РґРєРё
 //const std::string test_html_str = "<!doctype html>< html ><head><title>Example Domain< / title><meta charset = 'utf-8' / >"
 //"<meta http - equiv = Content-type content = text/html; charset=utf-8 / >"
 //"<meta name = viewport content = width=device-width, initial-scale=1 / >"
@@ -25,15 +25,15 @@ class html_parser
 private:	
 	std::string complete_url(const std::string& in_url, const std::string& url_base);
 	std::string get_base_path(const std::string& in_str);
-	bool check_this_host_only(const std::string& host_url, const std::string& url_str, bool this_host_only); //проверка, является ли урл требуемым хостом	
+	bool check_this_host_only(const std::string& host_url, const std::string& url_str, bool this_host_only); //РїСЂРѕРІРµСЂРєР°, СЏРІР»СЏРµС‚СЃСЏ Р»Рё СѓСЂР» С‚СЂРµР±СѓРµРјС‹Рј С…РѕСЃС‚РѕРј	
 
 public:
-	int max_word_len = 32; //максимальная длина слова для добавления в базу данных
-	int min_word_len = 3;  //минимальная длина слова для добавления в базу данных
+	int max_word_len = 32; //РјР°РєСЃРёРјР°Р»СЊРЅР°СЏ РґР»РёРЅР° СЃР»РѕРІР° РґР»СЏ РґРѕР±Р°РІР»РµРЅРёСЏ РІ Р±Р°Р·Сѓ РґР°РЅРЅС‹С…
+	int min_word_len = 3;  //РјРёРЅРёРјР°Р»СЊРЅР°СЏ РґР»РёРЅР° СЃР»РѕРІР° РґР»СЏ РґРѕР±Р°РІР»РµРЅРёСЏ РІ Р±Р°Р·Сѓ РґР°РЅРЅС‹С…
+
+	std::string get_base_host(const std::string& url_str); //РїРѕР»СѓС‡РёС‚СЊ С…РѕСЃС‚ РёР· СЃС‚СЂРѕРєРё	
+	std::string clear_tags(const std::string& html_body_str);	//РѕС‡РёСЃС‚РёС‚СЊ СЃС‚СЂРѕРєСѓ РѕС‚ С‚РµРіРѕРІ, РІ С‚РѕРј С‡РёСЃР»Рµ РІСЃРµ РґРѕ С‚РµРіР° <body>
 	
-	std::string get_base_host(const std::string& url_str); //получить хост из строки	
-	std::string clear_tags(const std::string& html_body_str);	//очистить строку от тегов, в том числе все до тега <body>
-	
-	std::set<std::string> get_urls_from_html(const std::string& html_body_str, const std::string& base_str, bool this_host_only, std::string host_url); //получить список новых урлов
-	std::map<std::string, unsigned  int> collect_words(const std::string& text_str); //получить мап слов 
+	std::set<std::string> get_urls_from_html(const std::string& html_body_str, const std::string& base_str, bool this_host_only, std::string host_url); //РїРѕР»СѓС‡РёС‚СЊ СЃРїРёСЃРѕРє РЅРѕРІС‹С… СѓСЂР»РѕРІ
+	std::map<std::string, unsigned  int> collect_words(const std::string& text_str); //РїРѕР»СѓС‡РёС‚СЊ РјР°Рї СЃР»РѕРІ 
 };

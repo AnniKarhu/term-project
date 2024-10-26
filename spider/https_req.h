@@ -6,13 +6,7 @@ class https_req : public http_req
 {
 protected:
 	virtual const std::string port() override { return "443"; }
-	virtual const std::string url_start() override 
-	{
-		return "https://"; 
-	}
-	
-private:
-	
+	virtual const std::string url_start() override { return "https://"; }
 
 public:
 

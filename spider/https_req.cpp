@@ -26,8 +26,8 @@ bool https_req::get_page()
         auto const results = resolver.resolve(host, port()); // Look up the domain name        
         
         
-        //эта функция вешает поток при недоступном хосте (например instagram)
-        //попробовать заменить на асинхронный доступ и добавить тайм аут, если останется время
+        //                                               (         instagram)
+        //                                                              ,                     
         beast::get_lowest_layer(stream).connect(results);  // Make the connection on the IP address we get from a lookup        
         stream.handshake(ssl::stream_base::client); // Perform the SSL handshake
 

@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 #include <iostream>
 
 class ParserException_error : public std::exception
@@ -6,7 +6,7 @@ class ParserException_error : public std::exception
 public:
 	const char* what() const override
 	{
-		return "Ошибка парсера";
+		return "РћС€РёР±РєР° РїР°СЂСЃРµСЂР°";
 	}
 };
 
@@ -15,7 +15,7 @@ class ParserException_no_file : public std::exception
 public:
 	const char* what() const override
 	{
-		return "Не получилось считать данные из файла";
+		return "РќРµ РїРѕР»СѓС‡РёР»РѕСЃСЊ СЃС‡РёС‚Р°С‚СЊ РґР°РЅРЅС‹Рµ РёР· С„Р°Р№Р»Р°";
 	}
 };
 
@@ -24,7 +24,7 @@ class ParserException_incorrect_data : public std::exception
 public:
 	const char* what() const override
 	{
-		return "В файле содержатся некорректные данные. Результаты запроса могут быть некорректными или неполными.";
+		return "Р’ С„Р°Р№Р»Рµ СЃРѕРґРµСЂР¶Р°С‚СЃСЏ РЅРµРєРѕСЂСЂРµРєС‚РЅС‹Рµ РґР°РЅРЅС‹Рµ. Р РµР·СѓР»СЊС‚Р°С‚С‹ Р·Р°РїСЂРѕСЃР° РјРѕРіСѓС‚ Р±С‹С‚СЊ РЅРµРєРѕСЂСЂРµРєС‚РЅС‹РјРё РёР»Рё РЅРµРїРѕР»РЅС‹РјРё.";
 	}
 };
 
@@ -33,7 +33,7 @@ class ParserException_no_section : public std::exception
 public:
 	const char* what() const override
 	{
-		return "Запрашиваемая секция не существует";
+		return "Р—Р°РїСЂР°С€РёРІР°РµРјР°СЏ СЃРµРєС†РёСЏ РЅРµ СЃСѓС‰РµСЃС‚РІСѓРµС‚";
 	}
 };
 
@@ -42,7 +42,7 @@ class ParserException_no_variable : public std::exception
 public:
 	const char* what() const override
 	{
-		return "В секции нет запрашиваемой переменной";
+		return "Р’ СЃРµРєС†РёРё РЅРµС‚ Р·Р°РїСЂР°С€РёРІР°РµРјРѕР№ РїРµСЂРµРјРµРЅРЅРѕР№";
 	}
 };
 
@@ -51,7 +51,7 @@ class ParserException_incorrect_request : public std::exception
 public:
 	const char* what() const override
 	{
-		return "Ошибка в строке запроса";
+		return "РћС€РёР±РєР° РІ СЃС‚СЂРѕРєРµ Р·Р°РїСЂРѕСЃР°";
 	}
 };
 
@@ -60,6 +60,6 @@ class ParserException_type_error : public std::exception
 public:
 	const char* what() const override
 	{
-		return "Неверный тип переменной в запросе";
+		return "РќРµРІРµСЂРЅС‹Р№ С‚РёРї РїРµСЂРµРјРµРЅРЅРѕР№ РІ Р·Р°РїСЂРѕСЃРµ";
 	}
 };

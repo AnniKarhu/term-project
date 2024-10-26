@@ -20,8 +20,7 @@ set(SOURCE_FILES "main.cpp"
 				 "https_req.h" "https_req.cpp" "root_certificates.hpp"
 				 "tasks_queue.h" "tasks_queue.cpp"				 
 				 "html_parser.h" "html_parser.cpp"
-				 #"user_interface.h" "user_interface.cpp" 
-				 
+								 
 				 )
 
 project(Spider)

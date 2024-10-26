@@ -12,6 +12,10 @@ private:
 	bool create_tables(); //создать необходимые таблицы
 	bool create_templates(); //создать шаблоны для работы
 
+	bool add_new_str(const std::string& str, std::string tmpl);
+	int get_str_id(const std::string& str, std::string tmpl);
+	bool new_word_url_pair(int url_id, int word_id, int num, std::string tmpl);
+
 public:
 
 	explicit Data_base(const std::string params_str)  noexcept;
@@ -28,47 +32,17 @@ public:
 	Data_base& operator=(Data_base&& other) noexcept;       // оператор перемещающего присваивания
 	~Data_base();	
 
-	/*взаимодействие пользователя с базой данных*/	
 
-	/*информация о клиенте*/
-
-	//получить информацию о клиенте по его id	
-	std::tuple<int, std::string, std::string, std::string> get_user_by_id(int UserId); 
+	/******************************************************************************************/
 	
-	//получить список номеров телефонов по id клиента
-	std::vector<std::string> get_phones_list_by_user_id(int UserId); 
+	bool add_new_url(const std::string& url_str); //добавить новый url
+	bool add_new_word(const std::string& word_str); //добавить новое слово
+	bool add_new_word_url_pair(int url_id, int word_id, int num); //добавить новое значение - количество слов на странице
+	bool update_word_url_pair(int url_id, int word_id, int num); //изменить количество слов на странице
 	
-	//поиск клиентов по произвольной строке - имя, фамилия, email, телефон	
-	std::map<int, std::tuple<std::string, std::string, std::string>> get_users_list_by_string(std::string DefaultStr);
+	int get_url_id(const std::string& url_str); //узнать id url
+	int get_word_id(const std::string& word_str); //узнать id слова
+	bool get_word_url_exist(int url_id, int word_id); //существует ли запись с такими id страницы и слова
 	
-	//поиск клиентов с заданным именем	
-	std::map<int, std::tuple<std::string, std::string, std::string>> get_users_list_by_name(std::string UserName); 
 	
-	//поиск клиентов с заданной фамилией
-	std::map<int, std::tuple<std::string, std::string, std::string>> get_users_list_by_lastname(std::string UserLastName);
-	
-	//поиск клиентов с заданным email	
-	std::map<int, std::tuple<std::string, std::string, std::string>> get_users_list_by_email(std::string UserEmail); 
-	
-	//поиск id клиента с заданным телефоном
-	int get_user_id_by_phone(std::string UserPhone);
-
-	/*добавить или изменить информацию о клиенте*/
-
-	//добавить нового клиента
-	bool add_new_user(std::string UserName, std::string UserLastName, std::string UserEmail); 
-
-	//добавление телефона клиента с известным id
-	bool add_user_phone(int user_id, std::string user_phone);
-
-	//изменение данных клиента с заданным id
-	bool update_user_data(int user_id, std::string new_name, std::string new_lastname, std::string new_email);
-
-	/*удаление информации о клиенте*/
-
-	//удаление известного номера телефона  клиента с заданным id
-	bool delete_user_phone(int user_id, std::string user_phone);
-
-	//удалить  клиента с заданным id
-	bool delete_user(int user_id);
 };

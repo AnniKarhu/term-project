@@ -1,17 +1,18 @@
-#include "ini_parser.h"
+п»ї#include "ini_parser.h"
 #include <fstream>
 #include <string>
 
+
 ini_parser::ini_parser()
 {	
-	//массивы для хранения имен секций и их переменных
-	variables_str_array = new std::vector<std::map<std::string, std::string>>; //массивом мапов, которые содержат строки
-	sections_map = new std::map<std::string, int>; //соответствие названия секции номеру массива variables_str_array
+	//РјР°СЃСЃРёРІС‹ РґР»СЏ С…СЂР°РЅРµРЅРёСЏ РёРјРµРЅ СЃРµРєС†РёР№ Рё РёС… РїРµСЂРµРјРµРЅРЅС‹С…
+	variables_str_array = new std::vector<std::map<std::string, std::string>>; //РјР°СЃСЃРёРІРѕРј РјР°РїРѕРІ, РєРѕС‚РѕСЂС‹Рµ СЃРѕРґРµСЂР¶Р°С‚ СЃС‚СЂРѕРєРё
+	sections_map = new std::map<std::string, int>; //СЃРѕРѕС‚РІРµС‚СЃС‚РІРёРµ РЅР°Р·РІР°РЅРёСЏ СЃРµРєС†РёРё РЅРѕРјРµСЂСѓ РјР°СЃСЃРёРІР° variables_str_array
 
-	//если были проблемы при вызовах new
+	//РµСЃР»Рё Р±С‹Р»Рё РїСЂРѕР±Р»РµРјС‹ РїСЂРё РІС‹Р·РѕРІР°С… new
 	if ((variables_str_array == nullptr) || (sections_map == nullptr))
 	{
-		parser_invalid = true; //есть проблемы с парсером
+		parser_invalid = true; //РµСЃС‚СЊ РїСЂРѕР±Р»РµРјС‹ СЃ РїР°СЂСЃРµСЂРѕРј
 		return;
 	}
 }
@@ -22,30 +23,30 @@ ini_parser::~ini_parser()
 	delete sections_map;
 }
 
-ini_parser::ini_parser(const ini_parser& other) // конструктор копирования
+ini_parser::ini_parser(const ini_parser& other) // РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РєРѕРїРёСЂРѕРІР°РЅРёСЏ
 {
-	parser_invalid = other.parser_invalid; //есть ли проблемы с парсером
-	file_read = other.file_read;  //хранит информацию о том, удалось ли считать данные из файла
-	invalid_data = other.invalid_data; //хранит информацию, есть ли в файле некорректная информация
-	incorrect_str_num = other.incorrect_str_num;  //номер строки, содержащей некорректный синтаксис
-	incorrect_str = other.incorrect_str;  //содержимое строки с некорректным синтаксисом
+	parser_invalid = other.parser_invalid; //РµСЃС‚СЊ Р»Рё РїСЂРѕР±Р»РµРјС‹ СЃ РїР°СЂСЃРµСЂРѕРј
+	file_read = other.file_read;  //С…СЂР°РЅРёС‚ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ С‚РѕРј, СѓРґР°Р»РѕСЃСЊ Р»Рё СЃС‡РёС‚Р°С‚СЊ РґР°РЅРЅС‹Рµ РёР· С„Р°Р№Р»Р°
+	invalid_data = other.invalid_data; //С…СЂР°РЅРёС‚ РёРЅС„РѕСЂРјР°С†РёСЋ, РµСЃС‚СЊ Р»Рё РІ С„Р°Р№Р»Рµ РЅРµРєРѕСЂСЂРµРєС‚РЅР°СЏ РёРЅС„РѕСЂРјР°С†РёСЏ
+	incorrect_str_num = other.incorrect_str_num;  //РЅРѕРјРµСЂ СЃС‚СЂРѕРєРё, СЃРѕРґРµСЂР¶Р°С‰РµР№ РЅРµРєРѕСЂСЂРµРєС‚РЅС‹Р№ СЃРёРЅС‚Р°РєСЃРёСЃ
+	incorrect_str = other.incorrect_str;  //СЃРѕРґРµСЂР¶РёРјРѕРµ СЃС‚СЂРѕРєРё СЃ РЅРµРєРѕСЂСЂРµРєС‚РЅС‹Рј СЃРёРЅС‚Р°РєСЃРёСЃРѕРј
 
-	//текущая секция для добавления переменных
-	current_section_name = other.current_section_name; //имя секции
-	current_section_number = other.current_section_number; //номер секции = индекс  этой секции в массиве variables_str_array
+	//С‚РµРєСѓС‰Р°СЏ СЃРµРєС†РёСЏ РґР»СЏ РґРѕР±Р°РІР»РµРЅРёСЏ РїРµСЂРµРјРµРЅРЅС‹С…
+	current_section_name = other.current_section_name; //РёРјСЏ СЃРµРєС†РёРё
+	current_section_number = other.current_section_number; //РЅРѕРјРµСЂ СЃРµРєС†РёРё = РёРЅРґРµРєСЃ  СЌС‚РѕР№ СЃРµРєС†РёРё РІ РјР°СЃСЃРёРІРµ variables_str_array
 
 	sections_map = new std::map<std::string, int>;
-	*sections_map = *(other.sections_map); // new std::map<std::string, int>; //соответствие названия секции номеру массива variables_str_array
+	*sections_map = *(other.sections_map); // new std::map<std::string, int>; //СЃРѕРѕС‚РІРµС‚СЃС‚РІРёРµ РЅР°Р·РІР°РЅРёСЏ СЃРµРєС†РёРё РЅРѕРјРµСЂСѓ РјР°СЃСЃРёРІР° variables_str_array
 
-	variables_str_array = new std::vector<std::map<std::string, std::string>>; //массивом мапов, которые содержат строки (название переменных и их значения)
+	variables_str_array = new std::vector<std::map<std::string, std::string>>; //РјР°СЃСЃРёРІРѕРј РјР°РїРѕРІ, РєРѕС‚РѕСЂС‹Рµ СЃРѕРґРµСЂР¶Р°С‚ СЃС‚СЂРѕРєРё (РЅР°Р·РІР°РЅРёРµ РїРµСЂРµРјРµРЅРЅС‹С… Рё РёС… Р·РЅР°С‡РµРЅРёСЏ)
 
 	for (int i = 0; i < other.variables_str_array->size(); ++i)
 	{
-		variables_str_array->push_back((*other.variables_str_array)[i]); //  скопировать map в новый массив
+		variables_str_array->push_back((*other.variables_str_array)[i]); //  СЃРєРѕРїРёСЂРѕРІР°С‚СЊ map РІ РЅРѕРІС‹Р№ РјР°СЃСЃРёРІ
 	}
 }
 
-ini_parser& ini_parser::operator=(const ini_parser& other) // оператор копирующего присваивания
+ini_parser& ini_parser::operator=(const ini_parser& other) // РѕРїРµСЂР°С‚РѕСЂ РєРѕРїРёСЂСѓСЋС‰РµРіРѕ РїСЂРёСЃРІР°РёРІР°РЅРёСЏ
 {
 	if (this != &other)
 	{
@@ -55,17 +56,17 @@ ini_parser& ini_parser::operator=(const ini_parser& other) // оператор копирующе
 	return *this;
 }
 
-ini_parser::ini_parser(ini_parser&& other) noexcept	// конструктор перемещения
+ini_parser::ini_parser(ini_parser&& other) noexcept	// РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РїРµСЂРµРјРµС‰РµРЅРёСЏ
 {
-	parser_invalid = other.parser_invalid; //есть ли проблемы с парсером
-	file_read = other.file_read;  //хранит информацию о том, удалось ли считать данные из файла
-	invalid_data = other.invalid_data; //хранит информацию, есть ли в файле некорректная информация
-	incorrect_str_num = other.incorrect_str_num;  //номер строки, содержащей некорректный синтаксис
-	incorrect_str = other.incorrect_str;  //содержимое строки с некорректным синтаксисом
+	parser_invalid = other.parser_invalid; //РµСЃС‚СЊ Р»Рё РїСЂРѕР±Р»РµРјС‹ СЃ РїР°СЂСЃРµСЂРѕРј
+	file_read = other.file_read;  //С…СЂР°РЅРёС‚ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ С‚РѕРј, СѓРґР°Р»РѕСЃСЊ Р»Рё СЃС‡РёС‚Р°С‚СЊ РґР°РЅРЅС‹Рµ РёР· С„Р°Р№Р»Р°
+	invalid_data = other.invalid_data; //С…СЂР°РЅРёС‚ РёРЅС„РѕСЂРјР°С†РёСЋ, РµСЃС‚СЊ Р»Рё РІ С„Р°Р№Р»Рµ РЅРµРєРѕСЂСЂРµРєС‚РЅР°СЏ РёРЅС„РѕСЂРјР°С†РёСЏ
+	incorrect_str_num = other.incorrect_str_num;  //РЅРѕРјРµСЂ СЃС‚СЂРѕРєРё, СЃРѕРґРµСЂР¶Р°С‰РµР№ РЅРµРєРѕСЂСЂРµРєС‚РЅС‹Р№ СЃРёРЅС‚Р°РєСЃРёСЃ
+	incorrect_str = other.incorrect_str;  //СЃРѕРґРµСЂР¶РёРјРѕРµ СЃС‚СЂРѕРєРё СЃ РЅРµРєРѕСЂСЂРµРєС‚РЅС‹Рј СЃРёРЅС‚Р°РєСЃРёСЃРѕРј
 
-	//текущая секция для добавления переменных
-	current_section_name = other.current_section_name; //имя секции
-	current_section_number = other.current_section_number; //номер секции = индекс  этой секции в массиве variables_str_array
+	//С‚РµРєСѓС‰Р°СЏ СЃРµРєС†РёСЏ РґР»СЏ РґРѕР±Р°РІР»РµРЅРёСЏ РїРµСЂРµРјРµРЅРЅС‹С…
+	current_section_name = other.current_section_name; //РёРјСЏ СЃРµРєС†РёРё
+	current_section_number = other.current_section_number; //РЅРѕРјРµСЂ СЃРµРєС†РёРё = РёРЅРґРµРєСЃ  СЌС‚РѕР№ СЃРµРєС†РёРё РІ РјР°СЃСЃРёРІРµ variables_str_array
 
 	sections_map = other.sections_map;
 	other.sections_map = nullptr;
@@ -74,14 +75,14 @@ ini_parser::ini_parser(ini_parser&& other) noexcept	// конструктор перемещения
 	other.variables_str_array = nullptr;
 }
 
-ini_parser& ini_parser::operator=(ini_parser&& other) noexcept   // оператор перемещающего присваивания
+ini_parser& ini_parser::operator=(ini_parser&& other) noexcept   // РѕРїРµСЂР°С‚РѕСЂ РїРµСЂРµРјРµС‰Р°СЋС‰РµРіРѕ РїСЂРёСЃРІР°РёРІР°РЅРёСЏ
 {
 	return *this = ini_parser(other);
 }
 
-std::string ini_parser::delete_spaces(const std::string& src_str) //удалить пробелы и знаки табуляции в начале строки
+std::string ini_parser::delete_spaces(const std::string& src_str) //СѓРґР°Р»РёС‚СЊ РїСЂРѕР±РµР»С‹ Рё Р·РЅР°РєРё С‚Р°Р±СѓР»СЏС†РёРё РІ РЅР°С‡Р°Р»Рµ СЃС‚СЂРѕРєРё
 {
-	if (src_str == "") 	return src_str; //ничего не делать с пустой строкой
+	if (src_str == "") 	return src_str; //РЅРёС‡РµРіРѕ РЅРµ РґРµР»Р°С‚СЊ СЃ РїСѓСЃС‚РѕР№ СЃС‚СЂРѕРєРѕР№
 
 	std::string temp_str = "";
 	int i = 0;
@@ -90,10 +91,10 @@ std::string ini_parser::delete_spaces(const std::string& src_str) //удалить проб
 	while ((src_str[i] != '\n') &&
 		(i < src_str.size()))
 	{
-		if (((src_str[i] == ' ') || (src_str[i] == '\t')) && //знаки пробелов и табуляции 
-			is_beginning) //в начале строки
+		if (((src_str[i] == ' ') || (src_str[i] == '\t')) && //Р·РЅР°РєРё РїСЂРѕР±РµР»РѕРІ Рё С‚Р°Р±СѓР»СЏС†РёРё 
+			is_beginning) //РІ РЅР°С‡Р°Р»Рµ СЃС‚СЂРѕРєРё
 		{
-			++i; //пропустить
+			++i; //РїСЂРѕРїСѓСЃС‚РёС‚СЊ
 		}
 		else
 		{
@@ -106,40 +107,40 @@ std::string ini_parser::delete_spaces(const std::string& src_str) //удалить проб
 	return temp_str;
 }
 
-//исследовать строку: возвращаемый кортеж содержит код содержимого, название переменной или секции, значение переменной
+//РёСЃСЃР»РµРґРѕРІР°С‚СЊ СЃС‚СЂРѕРєСѓ: РІРѕР·РІСЂР°С‰Р°РµРјС‹Р№ РєРѕСЂС‚РµР¶ СЃРѕРґРµСЂР¶РёС‚ РєРѕРґ СЃРѕРґРµСЂР¶РёРјРѕРіРѕ, РЅР°Р·РІР°РЅРёРµ РїРµСЂРµРјРµРЅРЅРѕР№ РёР»Рё СЃРµРєС†РёРё, Р·РЅР°С‡РµРЅРёРµ РїРµСЂРµРјРµРЅРЅРѕР№
 std::tuple<string_type, std::string, std::string> ini_parser::research_string(const std::string& src_str)
 {
-	string_type temp_string_type = string_type::invalid_;  //строка невалидная
-	std::string temp_name = ""; //имя секции или переменной
-	std::string temp_value = ""; //значение переменной
+	string_type temp_string_type = string_type::invalid_;  //СЃС‚СЂРѕРєР° РЅРµРІР°Р»РёРґРЅР°СЏ
+	std::string temp_name = ""; //РёРјСЏ СЃРµРєС†РёРё РёР»Рё РїРµСЂРµРјРµРЅРЅРѕР№
+	std::string temp_value = ""; //Р·РЅР°С‡РµРЅРёРµ РїРµСЂРµРјРµРЅРЅРѕР№
 
-	if (src_str == "") //переданная строка пустая
+	if (src_str == "") //РїРµСЂРµРґР°РЅРЅР°СЏ СЃС‚СЂРѕРєР° РїСѓСЃС‚Р°СЏ
 	{
 		return std::make_tuple(string_type::empty_, temp_name, temp_value);
 	}
 
-	if (src_str[0] == ';') //переданная строка целиком содержит комментарий
+	if (src_str[0] == ';') //РїРµСЂРµРґР°РЅРЅР°СЏ СЃС‚СЂРѕРєР° С†РµР»РёРєРѕРј СЃРѕРґРµСЂР¶РёС‚ РєРѕРјРјРµРЅС‚Р°СЂРёР№
 	{
 		return std::make_tuple(string_type::empty_, temp_name, temp_value);
 	}
 
-	if (src_str[0] == '[') //переданная строка предположительно содержит название секции
+	if (src_str[0] == '[') //РїРµСЂРµРґР°РЅРЅР°СЏ СЃС‚СЂРѕРєР° РїСЂРµРґРїРѕР»РѕР¶РёС‚РµР»СЊРЅРѕ СЃРѕРґРµСЂР¶РёС‚ РЅР°Р·РІР°РЅРёРµ СЃРµРєС†РёРё
 	{
-		int end_pos = src_str.find(']'); //номер символа закрывающей скобки
+		int end_pos = src_str.find(']'); //РЅРѕРјРµСЂ СЃРёРјРІРѕР»Р° Р·Р°РєСЂС‹РІР°СЋС‰РµР№ СЃРєРѕР±РєРё
 
-		if ((end_pos == std::string::npos) ||   //закрывающей скобки нет
-			(end_pos == 1)) // ||					//имя секции не может быть пустым
+		if ((end_pos == std::string::npos) ||   //Р·Р°РєСЂС‹РІР°СЋС‰РµР№ СЃРєРѕР±РєРё РЅРµС‚
+			(end_pos == 1)) // ||					//РёРјСЏ СЃРµРєС†РёРё РЅРµ РјРѕР¶РµС‚ Р±С‹С‚СЊ РїСѓСЃС‚С‹Рј
 
 		{
-			return std::make_tuple(string_type::invalid_, temp_name, temp_value); //вернуть результат о невалидной строке
+			return std::make_tuple(string_type::invalid_, temp_name, temp_value); //РІРµСЂРЅСѓС‚СЊ СЂРµР·СѓР»СЊС‚Р°С‚ Рѕ РЅРµРІР°Р»РёРґРЅРѕР№ СЃС‚СЂРѕРєРµ
 		}
 		else
 		{
 			for (int i = 1; i < end_pos; ++i)
 			{
-				if ((src_str[i] == ' ') || (src_str[i] == '\t') || (src_str[i] == '.')) //название секции не может содержать пробелов, знаков табуляции, точек
+				if ((src_str[i] == ' ') || (src_str[i] == '\t') || (src_str[i] == '.')) //РЅР°Р·РІР°РЅРёРµ СЃРµРєС†РёРё РЅРµ РјРѕР¶РµС‚ СЃРѕРґРµСЂР¶Р°С‚СЊ РїСЂРѕР±РµР»РѕРІ, Р·РЅР°РєРѕРІ С‚Р°Р±СѓР»СЏС†РёРё, С‚РѕС‡РµРє
 				{
-					return std::make_tuple(string_type::invalid_, temp_name, temp_value); //вернуть результат о невалидной строке
+					return std::make_tuple(string_type::invalid_, temp_name, temp_value); //РІРµСЂРЅСѓС‚СЊ СЂРµР·СѓР»СЊС‚Р°С‚ Рѕ РЅРµРІР°Р»РёРґРЅРѕР№ СЃС‚СЂРѕРєРµ
 				}
 				else
 				{
@@ -147,77 +148,77 @@ std::tuple<string_type, std::string, std::string> ini_parser::research_string(co
 				}
 			}
 
-			//после закрывающей скобки могут быть только символы пробелов, табуляции или комментарий
+			//РїРѕСЃР»Рµ Р·Р°РєСЂС‹РІР°СЋС‰РµР№ СЃРєРѕР±РєРё РјРѕРіСѓС‚ Р±С‹С‚СЊ С‚РѕР»СЊРєРѕ СЃРёРјРІРѕР»С‹ РїСЂРѕР±РµР»РѕРІ, С‚Р°Р±СѓР»СЏС†РёРё РёР»Рё РєРѕРјРјРµРЅС‚Р°СЂРёР№
 			for (int i = end_pos + 1; i < src_str.size() - 1; ++i)
 			{
 				if ((src_str[i] != ' ') && (src_str[i] != '\t') && (src_str[i] != ';'))
 				{
-					return std::make_tuple(string_type::invalid_, temp_name, temp_value); //вернуть результат о невалидной строке
+					return std::make_tuple(string_type::invalid_, temp_name, temp_value); //РІРµСЂРЅСѓС‚СЊ СЂРµР·СѓР»СЊС‚Р°С‚ Рѕ РЅРµРІР°Р»РёРґРЅРѕР№ СЃС‚СЂРѕРєРµ
 				}
 
-				if (src_str[i] == ';') //после знака начала комментария можно не проверять
+				if (src_str[i] == ';') //РїРѕСЃР»Рµ Р·РЅР°РєР° РЅР°С‡Р°Р»Р° РєРѕРјРјРµРЅС‚Р°СЂРёСЏ РјРѕР¶РЅРѕ РЅРµ РїСЂРѕРІРµСЂСЏС‚СЊ
 				{
-					return std::make_tuple(string_type::section_, temp_name, temp_value); //вернуть название секции
+					return std::make_tuple(string_type::section_, temp_name, temp_value); //РІРµСЂРЅСѓС‚СЊ РЅР°Р·РІР°РЅРёРµ СЃРµРєС†РёРё
 				}
 			}
 
-			//недопустимого содержимого после закрывающей скобки нет, поэтому можно вернуть результат
-			return std::make_tuple(string_type::section_, temp_name, temp_value); //вернуть название секции
+			//РЅРµРґРѕРїСѓСЃС‚РёРјРѕРіРѕ СЃРѕРґРµСЂР¶РёРјРѕРіРѕ РїРѕСЃР»Рµ Р·Р°РєСЂС‹РІР°СЋС‰РµР№ СЃРєРѕР±РєРё РЅРµС‚, РїРѕСЌС‚РѕРјСѓ РјРѕР¶РЅРѕ РІРµСЂРЅСѓС‚СЊ СЂРµР·СѓР»СЊС‚Р°С‚
+			return std::make_tuple(string_type::section_, temp_name, temp_value); //РІРµСЂРЅСѓС‚СЊ РЅР°Р·РІР°РЅРёРµ СЃРµРєС†РёРё
 		}
 	}
 
-	//переданная строка не является пустой, комментарием или названием секции, поэтому может быть только переменной
-	int end_pos = src_str.find('='); //номер символа закрывающей скобки
+	//РїРµСЂРµРґР°РЅРЅР°СЏ СЃС‚СЂРѕРєР° РЅРµ СЏРІР»СЏРµС‚СЃСЏ РїСѓСЃС‚РѕР№, РєРѕРјРјРµРЅС‚Р°СЂРёРµРј РёР»Рё РЅР°Р·РІР°РЅРёРµРј СЃРµРєС†РёРё, РїРѕСЌС‚РѕРјСѓ РјРѕР¶РµС‚ Р±С‹С‚СЊ С‚РѕР»СЊРєРѕ РїРµСЂРµРјРµРЅРЅРѕР№
+	int end_pos = src_str.find('='); //РЅРѕРјРµСЂ СЃРёРјРІРѕР»Р° Р·Р°РєСЂС‹РІР°СЋС‰РµР№ СЃРєРѕР±РєРё
 
-	if (end_pos == std::string::npos)    //знака равенства нет
+	if (end_pos == std::string::npos)    //Р·РЅР°РєР° СЂР°РІРµРЅСЃС‚РІР° РЅРµС‚
 	{
-		return std::make_tuple(string_type::invalid_, temp_name, temp_value); //вернуть результат о невалидной строке
+		return std::make_tuple(string_type::invalid_, temp_name, temp_value); //РІРµСЂРЅСѓС‚СЊ СЂРµР·СѓР»СЊС‚Р°С‚ Рѕ РЅРµРІР°Р»РёРґРЅРѕР№ СЃС‚СЂРѕРєРµ
 	}
 
-	for (int i = 0; (i < end_pos) && (src_str[i] != ' ') && (src_str[i] != '\t') && (src_str[i] != '.'); ++i) //до знака равенства или первого знака табуляции или пробела
+	for (int i = 0; (i < end_pos) && (src_str[i] != ' ') && (src_str[i] != '\t') && (src_str[i] != '.'); ++i) //РґРѕ Р·РЅР°РєР° СЂР°РІРµРЅСЃС‚РІР° РёР»Рё РїРµСЂРІРѕРіРѕ Р·РЅР°РєР° С‚Р°Р±СѓР»СЏС†РёРё РёР»Рё РїСЂРѕР±РµР»Р°
 	{
 		temp_name += src_str[i];
 	}
 
-	//имя переменной не может быть пустым
+	//РёРјСЏ РїРµСЂРµРјРµРЅРЅРѕР№ РЅРµ РјРѕР¶РµС‚ Р±С‹С‚СЊ РїСѓСЃС‚С‹Рј
 	if (temp_name == "")
 	{
-		return std::make_tuple(string_type::invalid_, temp_name, temp_value); //вернуть результат о невалидной строке
+		return std::make_tuple(string_type::invalid_, temp_name, temp_value); //РІРµСЂРЅСѓС‚СЊ СЂРµР·СѓР»СЊС‚Р°С‚ Рѕ РЅРµРІР°Р»РёРґРЅРѕР№ СЃС‚СЂРѕРєРµ
 	}
 
-	// между именем переменной и знаком равенства могут быть только знаки пробелов и табуляций
+	// РјРµР¶РґСѓ РёРјРµРЅРµРј РїРµСЂРµРјРµРЅРЅРѕР№ Рё Р·РЅР°РєРѕРј СЂР°РІРµРЅСЃС‚РІР° РјРѕРіСѓС‚ Р±С‹С‚СЊ С‚РѕР»СЊРєРѕ Р·РЅР°РєРё РїСЂРѕР±РµР»РѕРІ Рё С‚Р°Р±СѓР»СЏС†РёР№
 	for (int i = temp_name.size(); i < end_pos; ++i)
 	{
 		if ((src_str[i] != ' ') && (src_str[i] != '\t'))
 		{
-			return std::make_tuple(string_type::invalid_, temp_name, temp_value); //вернуть результат о невалидной строке
+			return std::make_tuple(string_type::invalid_, temp_name, temp_value); //РІРµСЂРЅСѓС‚СЊ СЂРµР·СѓР»СЊС‚Р°С‚ Рѕ РЅРµРІР°Р»РёРґРЅРѕР№ СЃС‚СЂРѕРєРµ
 		}
 	}
 
-	//после знака равенства до конца строки или до начала комментария - значение переменной
+	//РїРѕСЃР»Рµ Р·РЅР°РєР° СЂР°РІРµРЅСЃС‚РІР° РґРѕ РєРѕРЅС†Р° СЃС‚СЂРѕРєРё РёР»Рё РґРѕ РЅР°С‡Р°Р»Р° РєРѕРјРјРµРЅС‚Р°СЂРёСЏ - Р·РЅР°С‡РµРЅРёРµ РїРµСЂРµРјРµРЅРЅРѕР№
 	for (int i = end_pos + 1; i < src_str.size(); ++i)
 	{
-		if (src_str[i] == ';') //дальше только комментарий
+		if (src_str[i] == ';') //РґР°Р»СЊС€Рµ С‚РѕР»СЊРєРѕ РєРѕРјРјРµРЅС‚Р°СЂРёР№
 		{
-			return std::make_tuple(string_type::variable_, temp_name, temp_value); //вернуть результат - имя и значение переменной
+			return std::make_tuple(string_type::variable_, temp_name, temp_value); //РІРµСЂРЅСѓС‚СЊ СЂРµР·СѓР»СЊС‚Р°С‚ - РёРјСЏ Рё Р·РЅР°С‡РµРЅРёРµ РїРµСЂРµРјРµРЅРЅРѕР№
 		}
 
 		temp_value += src_str[i];
 	}
 
-	return std::make_tuple(string_type::variable_, temp_name, temp_value); //вернуть результат - имя и значение переменной
+	return std::make_tuple(string_type::variable_, temp_name, temp_value); //РІРµСЂРЅСѓС‚СЊ СЂРµР·СѓР»СЊС‚Р°С‚ - РёРјСЏ Рё Р·РЅР°С‡РµРЅРёРµ РїРµСЂРµРјРµРЅРЅРѕР№
 }
 
-std::tuple<std::string, std::string> ini_parser::get_section_variable_names(const std::string& src_str) //из строки запроса получить имя секции и имя переменной
+std::tuple<std::string, std::string> ini_parser::get_section_variable_names(const std::string& src_str) //РёР· СЃС‚СЂРѕРєРё Р·Р°РїСЂРѕСЃР° РїРѕР»СѓС‡РёС‚СЊ РёРјСЏ СЃРµРєС†РёРё Рё РёРјСЏ РїРµСЂРµРјРµРЅРЅРѕР№
 {
 	std::string section_name = "";
 	std::string variable_name = "";
 
 	std::string temp_str = delete_spaces(src_str);
 
-	int point_pos = temp_str.find('.'); //номер символа точки
-	if ((point_pos == std::string::npos) ||    //знака точки нет
-		(temp_str.length() < 3)					//в строке запроса не может быть меньше 3 символов a.a
+	int point_pos = temp_str.find('.'); //РЅРѕРјРµСЂ СЃРёРјРІРѕР»Р° С‚РѕС‡РєРё
+	if ((point_pos == std::string::npos) ||    //Р·РЅР°РєР° С‚РѕС‡РєРё РЅРµС‚
+		(temp_str.length() < 3)					//РІ СЃС‚СЂРѕРєРµ Р·Р°РїСЂРѕСЃР° РЅРµ РјРѕР¶РµС‚ Р±С‹С‚СЊ РјРµРЅСЊС€Рµ 3 СЃРёРјРІРѕР»РѕРІ a.a
 		)
 	{
 		throw ParserException_incorrect_request();
@@ -230,7 +231,7 @@ std::tuple<std::string, std::string> ini_parser::get_section_variable_names(cons
 	{
 		symb = temp_str[i];
 		i++;
-		if (symb == ' ') //todo: хорошо бы иметь список разрешенных или запрещенных символов в названиях секций и переменных
+		if (symb == ' ') //todo: С…РѕСЂРѕС€Рѕ Р±С‹ РёРјРµС‚СЊ СЃРїРёСЃРѕРє СЂР°Р·СЂРµС€РµРЅРЅС‹С… РёР»Рё Р·Р°РїСЂРµС‰РµРЅРЅС‹С… СЃРёРјРІРѕР»РѕРІ РІ РЅР°Р·РІР°РЅРёСЏС… СЃРµРєС†РёР№ Рё РїРµСЂРµРјРµРЅРЅС‹С…
 		{
 			throw ParserException_incorrect_request();
 		}
@@ -246,7 +247,7 @@ std::tuple<std::string, std::string> ini_parser::get_section_variable_names(cons
 
 	} while (i < temp_str.length());
 
-	if (temp_str.length() < i) //если точка - последний символ в строке, т.е. нет имени переменной
+	if (temp_str.length() < i) //РµСЃР»Рё С‚РѕС‡РєР° - РїРѕСЃР»РµРґРЅРёР№ СЃРёРјРІРѕР» РІ СЃС‚СЂРѕРєРµ, С‚.Рµ. РЅРµС‚ РёРјРµРЅРё РїРµСЂРµРјРµРЅРЅРѕР№
 	{
 		throw ParserException_incorrect_request();
 	}
@@ -254,7 +255,7 @@ std::tuple<std::string, std::string> ini_parser::get_section_variable_names(cons
 	do
 	{
 		symb = temp_str[i];
-		if ((symb == '.') || (symb == ' ')) //todo: хорошо бы иметь список разрешенных или запрещенных символов в названиях секций и переменных
+		if ((symb == '.') || (symb == ' ')) //todo: С…РѕСЂРѕС€Рѕ Р±С‹ РёРјРµС‚СЊ СЃРїРёСЃРѕРє СЂР°Р·СЂРµС€РµРЅРЅС‹С… РёР»Рё Р·Р°РїСЂРµС‰РµРЅРЅС‹С… СЃРёРјРІРѕР»РѕРІ РІ РЅР°Р·РІР°РЅРёСЏС… СЃРµРєС†РёР№ Рё РїРµСЂРµРјРµРЅРЅС‹С…
 		{
 			throw ParserException_incorrect_request();
 		}
@@ -270,35 +271,35 @@ std::tuple<std::string, std::string> ini_parser::get_section_variable_names(cons
 		throw ParserException_incorrect_request();
 	}
 
-	return std::make_tuple(section_name, variable_name); //вернуть результат - имена секции и переменной
+	return std::make_tuple(section_name, variable_name); //РІРµСЂРЅСѓС‚СЊ СЂРµР·СѓР»СЊС‚Р°С‚ - РёРјРµРЅР° СЃРµРєС†РёРё Рё РїРµСЂРµРјРµРЅРЅРѕР№
 }
 
-std::string ini_parser::get_section_from_request(const std::string& request_str) //получить из строки запроса название секции
+std::string ini_parser::get_section_from_request(const std::string& request_str) //РїРѕР»СѓС‡РёС‚СЊ РёР· СЃС‚СЂРѕРєРё Р·Р°РїСЂРѕСЃР° РЅР°Р·РІР°РЅРёРµ СЃРµРєС†РёРё
 {
 	std::string section_name = "";
 	std::string variable_name = "";
 
-	std::tie(section_name, variable_name) = get_section_variable_names(request_str); //может выбросить исключение ParserException_incorrect_request()
+	std::tie(section_name, variable_name) = get_section_variable_names(request_str); //РјРѕР¶РµС‚ РІС‹Р±СЂРѕСЃРёС‚СЊ РёСЃРєР»СЋС‡РµРЅРёРµ ParserException_incorrect_request()
 
 	return section_name;
 }
 
 
-void ini_parser::check_parser() //проверяет, нет ли в парсере проблем и выбрасывает исключение
+void ini_parser::check_parser() //РїСЂРѕРІРµСЂСЏРµС‚, РЅРµС‚ Р»Рё РІ РїР°СЂСЃРµСЂРµ РїСЂРѕР±Р»РµРј Рё РІС‹Р±СЂР°СЃС‹РІР°РµС‚ РёСЃРєР»СЋС‡РµРЅРёРµ
 {
-	//bool file_read = false; //хранит информацию о том, удалось ли считать данные из файла
+	//bool file_read = false; //С…СЂР°РЅРёС‚ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ С‚РѕРј, СѓРґР°Р»РѕСЃСЊ Р»Рё СЃС‡РёС‚Р°С‚СЊ РґР°РЅРЅС‹Рµ РёР· С„Р°Р№Р»Р°
 	if (!file_read)
 	{
 		throw ParserException_no_file();
 	}
 
-	//bool parser_invalid = false; //есть проблемы с парсером
+	//bool parser_invalid = false; //РµСЃС‚СЊ РїСЂРѕР±Р»РµРјС‹ СЃ РїР°СЂСЃРµСЂРѕРј
 	if ((parser_invalid) || (sections_map == nullptr) || (variables_str_array == nullptr))
 	{
 		throw ParserException_error();
 	}
 
-	//bool invalid_data = false; //хранит информацию, есть ли в файле некорректная информация
+	//bool invalid_data = false; //С…СЂР°РЅРёС‚ РёРЅС„РѕСЂРјР°С†РёСЋ, РµСЃС‚СЊ Р»Рё РІ С„Р°Р№Р»Рµ РЅРµРєРѕСЂСЂРµРєС‚РЅР°СЏ РёРЅС„РѕСЂРјР°С†РёСЏ
 	if (invalid_data)
 	{
 		throw ParserException_incorrect_data();
@@ -307,11 +308,11 @@ void ini_parser::check_parser() //проверяет, нет ли в парсере проблем и выбрасыв
 	
 }
 
-void ini_parser::print_incorrect_info()	//вывести информацию о некорректных данных в файле
+void ini_parser::print_incorrect_info()	//РІС‹РІРµСЃС‚Рё РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РЅРµРєРѕСЂСЂРµРєС‚РЅС‹С… РґР°РЅРЅС‹С… РІ С„Р°Р№Р»Рµ
 {
-	std::cout << "В файле содержится некорректная информация.\n";
-	std::cout << "Номер строки с ошибкой: " << incorrect_str_num << "\n";
-	std::cout << "Строка: \"" << incorrect_str << "\"\n";
+	std::cout << "Р’ С„Р°Р№Р»Рµ СЃРѕРґРµСЂР¶РёС‚СЃСЏ РЅРµРєРѕСЂСЂРµРєС‚РЅР°СЏ РёРЅС„РѕСЂРјР°С†РёСЏ.\n";
+	std::cout << "РќРѕРјРµСЂ СЃС‚СЂРѕРєРё СЃ РѕС€РёР±РєРѕР№: " << incorrect_str_num << "\n";
+	std::cout << "РЎС‚СЂРѕРєР°: \"" << incorrect_str << "\"\n";
 }
 
 bool ini_parser::print_all_sections()
@@ -320,7 +321,7 @@ bool ini_parser::print_all_sections()
 
 	try
 	{
-		check_parser();  //проверяет, нет ли в парсере проблем и выбрасывает исключение
+		check_parser();  //РїСЂРѕРІРµСЂСЏРµС‚, РЅРµС‚ Р»Рё РІ РїР°СЂСЃРµСЂРµ РїСЂРѕР±Р»РµРј Рё РІС‹Р±СЂР°СЃС‹РІР°РµС‚ РёСЃРєР»СЋС‡РµРЅРёРµ
 	}
 	catch (const ParserException_incorrect_data& ex)
 	{
@@ -329,10 +330,10 @@ bool ini_parser::print_all_sections()
 
 	if (sections_map->size() > 0)
 	{
-		std::cout << "В файле имеются следующие секции:\n";
+		std::cout << "Р’ С„Р°Р№Р»Рµ РёРјРµСЋС‚СЃСЏ СЃР»РµРґСѓСЋС‰РёРµ СЃРµРєС†РёРё:\n";
 	}
 
-	for (auto& item : *sections_map) //перебрать все элементы мапа
+	for (auto& item : *sections_map) //РїРµСЂРµР±СЂР°С‚СЊ РІСЃРµ СЌР»РµРјРµРЅС‚С‹ РјР°РїР°
 	{
 		std::cout << item.first << "\n";
 	}
@@ -340,33 +341,33 @@ bool ini_parser::print_all_sections()
 	return print_result;
 }
 
-bool ini_parser::print_all_sections_info() //вывести на экран названия всех секций и их переменные
+bool ini_parser::print_all_sections_info() //РІС‹РІРµСЃС‚Рё РЅР° СЌРєСЂР°РЅ РЅР°Р·РІР°РЅРёСЏ РІСЃРµС… СЃРµРєС†РёР№ Рё РёС… РїРµСЂРµРјРµРЅРЅС‹Рµ
 {
-	std::cout << "\nПарсер содержит следующие данные: \n";
+	std::cout << "\nРџР°СЂСЃРµСЂ СЃРѕРґРµСЂР¶РёС‚ СЃР»РµРґСѓСЋС‰РёРµ РґР°РЅРЅС‹Рµ: \n";
 
 	bool print_result = true;
 
 	try
 	{
-		check_parser();  //проверяет, нет ли в парсере проблем и выбрасывает исключение
+		check_parser();  //РїСЂРѕРІРµСЂСЏРµС‚, РЅРµС‚ Р»Рё РІ РїР°СЂСЃРµСЂРµ РїСЂРѕР±Р»РµРј Рё РІС‹Р±СЂР°СЃС‹РІР°РµС‚ РёСЃРєР»СЋС‡РµРЅРёРµ
 	}
 	catch (const ParserException_incorrect_data& ex)
 	{
-		print_result = false;	//если в файле есть данные - попробовать их вывести, но предупредить о возможной некорректности данных	
+		print_result = false;	//РµСЃР»Рё РІ С„Р°Р№Р»Рµ РµСЃС‚СЊ РґР°РЅРЅС‹Рµ - РїРѕРїСЂРѕР±РѕРІР°С‚СЊ РёС… РІС‹РІРµСЃС‚Рё, РЅРѕ РїСЂРµРґСѓРїСЂРµРґРёС‚СЊ Рѕ РІРѕР·РјРѕР¶РЅРѕР№ РЅРµРєРѕСЂСЂРµРєС‚РЅРѕСЃС‚Рё РґР°РЅРЅС‹С…	
 	}
 
 	for (int i = 0; i < sections_map->size(); ++i)
 	{
-		std::cout << i << ": " << get_section_name(i) << "\n"; //получить имя секции по ее номеру
+		std::cout << i << ": " << get_section_name(i) << "\n"; //РїРѕР»СѓС‡РёС‚СЊ РёРјСЏ СЃРµРєС†РёРё РїРѕ РµРµ РЅРѕРјРµСЂСѓ
 	}
 
-	std::cout << "Всего секций = " << variables_str_array->size() << "\n\n";
+	std::cout << "Р’СЃРµРіРѕ СЃРµРєС†РёР№ = " << variables_str_array->size() << "\n\n";
 
 	for (int i = 0; i < variables_str_array->size(); ++i)
 	{
-		std::cout << "Размер секции " << i << " (" << get_section_name(i) << ") " << " = " << (*variables_str_array)[i].size() << "\n";
+		std::cout << "Р Р°Р·РјРµСЂ СЃРµРєС†РёРё " << i << " (" << get_section_name(i) << ") " << " = " << (*variables_str_array)[i].size() << "\n";
 
-		std::cout << "Список переменных:\n";
+		std::cout << "РЎРїРёСЃРѕРє РїРµСЂРµРјРµРЅРЅС‹С…:\n";
 		for (auto& item : (*variables_str_array)[i])
 		{
 			std::cout << item.first << " = " << item.second << "\n";
@@ -378,13 +379,13 @@ bool ini_parser::print_all_sections_info() //вывести на экран названия всех секц
 	return print_result;
 }
 
-bool ini_parser::print_all_variables(const std::string& section_name) //вывести на экран все переменные в секции
+bool ini_parser::print_all_variables(const std::string& section_name) //РІС‹РІРµСЃС‚Рё РЅР° СЌРєСЂР°РЅ РІСЃРµ РїРµСЂРµРјРµРЅРЅС‹Рµ РІ СЃРµРєС†РёРё
 {
 	bool print_result = true;
 
 	try
 	{
-		check_parser();  //проверяет, нет ли в парсере проблем и выбрасывает исключение
+		check_parser();  //РїСЂРѕРІРµСЂСЏРµС‚, РЅРµС‚ Р»Рё РІ РїР°СЂСЃРµСЂРµ РїСЂРѕР±Р»РµРј Рё РІС‹Р±СЂР°СЃС‹РІР°РµС‚ РёСЃРєР»СЋС‡РµРЅРёРµ
 	}
 	catch (const ParserException_incorrect_data& ex)
 	{
@@ -392,18 +393,18 @@ bool ini_parser::print_all_variables(const std::string& section_name) //вывести 
 	}
 
 
-	int section_index = get_section_number(section_name); //получить номер секции по ее имени
+	int section_index = get_section_number(section_name); //РїРѕР»СѓС‡РёС‚СЊ РЅРѕРјРµСЂ СЃРµРєС†РёРё РїРѕ РµРµ РёРјРµРЅРё
 	if (section_index < 0)
 	{
-		//бросить исключение - секция не существует
+		//Р±СЂРѕСЃРёС‚СЊ РёСЃРєР»СЋС‡РµРЅРёРµ - СЃРµРєС†РёСЏ РЅРµ СЃСѓС‰РµСЃС‚РІСѓРµС‚
 		throw(ParserException_no_section());
 	}
 	else
 	{
 		if ((*variables_str_array)[section_index].size() > 0)
 		{
-			std::cout << "В секции " << section_name << " имеются следующие переменные:\n";
-			for (auto& item : (*variables_str_array)[section_index]) //перебрать все элементы мапа
+			std::cout << "Р’ СЃРµРєС†РёРё " << section_name << " РёРјРµСЋС‚СЃСЏ СЃР»РµРґСѓСЋС‰РёРµ РїРµСЂРµРјРµРЅРЅС‹Рµ:\n";
+			for (auto& item : (*variables_str_array)[section_index]) //РїРµСЂРµР±СЂР°С‚СЊ РІСЃРµ СЌР»РµРјРµРЅС‚С‹ РјР°РїР°
 			{
 				std::cout << item.first << " = " << item.second << "\n";
 			}
@@ -413,22 +414,22 @@ bool ini_parser::print_all_variables(const std::string& section_name) //вывести 
 	return print_result;
 }
 
-std::string ini_parser::get_section_name(const int section_index) //получить имя секции по ее номеру
+std::string ini_parser::get_section_name(const int section_index) //РїРѕР»СѓС‡РёС‚СЊ РёРјСЏ СЃРµРєС†РёРё РїРѕ РµРµ РЅРѕРјРµСЂСѓ
 {
-	for (auto& item : *sections_map) //перебрать все элементы мапа
+	for (auto& item : *sections_map) //РїРµСЂРµР±СЂР°С‚СЊ РІСЃРµ СЌР»РµРјРµРЅС‚С‹ РјР°РїР°
 	{
-		if (item.second == section_index) //если значение равно индексу
+		if (item.second == section_index) //РµСЃР»Рё Р·РЅР°С‡РµРЅРёРµ СЂР°РІРЅРѕ РёРЅРґРµРєСЃСѓ
 		{
-			return item.first; //вернуть название
+			return item.first; //РІРµСЂРЅСѓС‚СЊ РЅР°Р·РІР°РЅРёРµ
 		}
 	}
 
 	return "";
 }
 
-int ini_parser::get_section_number(const std::string& section_name) //получить номер секции по ее имени
+int ini_parser::get_section_number(const std::string& section_name) //РїРѕР»СѓС‡РёС‚СЊ РЅРѕРјРµСЂ СЃРµРєС†РёРё РїРѕ РµРµ РёРјРµРЅРё
 {
-	//если такого ключа нет в мапе
+	//РµСЃР»Рё С‚Р°РєРѕРіРѕ РєР»СЋС‡Р° РЅРµС‚ РІ РјР°РїРµ
 	if ((*sections_map).find(section_name) == (*sections_map).end())
 	{
 		return -1;
@@ -438,19 +439,19 @@ int ini_parser::get_section_number(const std::string& section_name) //получить н
 	return temp;
 }
 
-std::string ini_parser::get_variable_value(const int section_index, const std::string& variable_name) //получить значение переменной по имени секции и имени переменной
+std::string ini_parser::get_variable_value(const int section_index, const std::string& variable_name) //РїРѕР»СѓС‡РёС‚СЊ Р·РЅР°С‡РµРЅРёРµ РїРµСЂРµРјРµРЅРЅРѕР№ РїРѕ РёРјРµРЅРё СЃРµРєС†РёРё Рё РёРјРµРЅРё РїРµСЂРµРјРµРЅРЅРѕР№
 {
 	if (section_index < 0)
 	{
-		throw ParserException_no_section(); //в функцию передана -1 - такой секции нет
+		throw ParserException_no_section(); //РІ С„СѓРЅРєС†РёСЋ РїРµСЂРµРґР°РЅР° -1 - С‚Р°РєРѕР№ СЃРµРєС†РёРё РЅРµС‚
 	}
 
-	if (section_index >= variables_str_array->size()) //проблема либо в коде парсера, либо в использовании функции get_variable_value
+	if (section_index >= variables_str_array->size()) //РїСЂРѕР±Р»РµРјР° Р»РёР±Рѕ РІ РєРѕРґРµ РїР°СЂСЃРµСЂР°, Р»РёР±Рѕ РІ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРё С„СѓРЅРєС†РёРё get_variable_value
 	{
 		throw ParserException_error();
 	}
 
-	//такой переменной нет в секции
+	//С‚Р°РєРѕР№ РїРµСЂРµРјРµРЅРЅРѕР№ РЅРµС‚ РІ СЃРµРєС†РёРё
 	if ((*variables_str_array)[section_index].find(variable_name) == (*variables_str_array)[section_index].end())
 	{
 		throw ParserException_no_variable();
@@ -462,7 +463,7 @@ std::string ini_parser::get_variable_value(const int section_index, const std::s
 
 void ini_parser::fill_parser(const std::string& file_name)
 {
-	//открыть файл
+	//РѕС‚РєСЂС‹С‚СЊ С„Р°Р№Р»
 	std::ifstream fin(file_name);
 	if (!fin.is_open())
 	{
@@ -470,81 +471,81 @@ void ini_parser::fill_parser(const std::string& file_name)
 		return;
 	}
 
-	//построчное чтение из файла
+	//РїРѕСЃС‚СЂРѕС‡РЅРѕРµ С‡С‚РµРЅРёРµ РёР· С„Р°Р№Р»Р°
 	std::string temp_str;
-	int lines_count = 0; //счетчик считанных из файла строк
-	int sections_count = 0;  //счетчик секций
+	int lines_count = 0; //СЃС‡РµС‚С‡РёРє СЃС‡РёС‚Р°РЅРЅС‹С… РёР· С„Р°Р№Р»Р° СЃС‚СЂРѕРє
+	int sections_count = 0;  //СЃС‡РµС‚С‡РёРє СЃРµРєС†РёР№
 
-	while (getline(fin, temp_str))  // getline забирает всю строку до знака перевода строки
+	while (getline(fin, temp_str))  // getline Р·Р°Р±РёСЂР°РµС‚ РІСЃСЋ СЃС‚СЂРѕРєСѓ РґРѕ Р·РЅР°РєР° РїРµСЂРµРІРѕРґР° СЃС‚СЂРѕРєРё
 	{
 		++lines_count;
-		std::string temp1 = delete_spaces(temp_str); //удалить пробелы и знаки табуляции из начала строки
+		std::string temp1 = delete_spaces(temp_str); //СѓРґР°Р»РёС‚СЊ РїСЂРѕР±РµР»С‹ Рё Р·РЅР°РєРё С‚Р°Р±СѓР»СЏС†РёРё РёР· РЅР°С‡Р°Р»Р° СЃС‚СЂРѕРєРё
 
-		string_type string_type_ = string_type::invalid_;  //строка невалидная
-		std::string name = ""; //имя секции или переменной
-		std::string value = ""; //значение переменной
+		string_type string_type_ = string_type::invalid_;  //СЃС‚СЂРѕРєР° РЅРµРІР°Р»РёРґРЅР°СЏ
+		std::string name = ""; //РёРјСЏ СЃРµРєС†РёРё РёР»Рё РїРµСЂРµРјРµРЅРЅРѕР№
+		std::string value = ""; //Р·РЅР°С‡РµРЅРёРµ РїРµСЂРµРјРµРЅРЅРѕР№
 
-		std::tie(string_type_, name, value) = research_string(temp1); //исследовать строку и понять, что с ней делать дальше
-		std::map<std::string, int>::iterator it_name; //итератор нельзя создать внутри switch-case (интересно, почему)
+		std::tie(string_type_, name, value) = research_string(temp1); //РёСЃСЃР»РµРґРѕРІР°С‚СЊ СЃС‚СЂРѕРєСѓ Рё РїРѕРЅСЏС‚СЊ, С‡С‚Рѕ СЃ РЅРµР№ РґРµР»Р°С‚СЊ РґР°Р»СЊС€Рµ
+		std::map<std::string, int>::iterator it_name; //РёС‚РµСЂР°С‚РѕСЂ РЅРµР»СЊР·СЏ СЃРѕР·РґР°С‚СЊ РІРЅСѓС‚СЂРё switch-case (РёРЅС‚РµСЂРµСЃРЅРѕ, РїРѕС‡РµРјСѓ)
 
-		switch (string_type_) //string_type_ после исследования строки research_string содержит тип строки
+		switch (string_type_) //string_type_ РїРѕСЃР»Рµ РёСЃСЃР»РµРґРѕРІР°РЅРёСЏ СЃС‚СЂРѕРєРё research_string СЃРѕРґРµСЂР¶РёС‚ С‚РёРї СЃС‚СЂРѕРєРё
 		{
-		case string_type::section_: //название секции
+		case string_type::section_: //РЅР°Р·РІР°РЅРёРµ СЃРµРєС†РёРё
 
-			current_section_name = name;		//текущая секция для добавления переменных
-			it_name = sections_map->find(name); //есть ли уже такая секция в массиве парсера
+			current_section_name = name;		//С‚РµРєСѓС‰Р°СЏ СЃРµРєС†РёСЏ РґР»СЏ РґРѕР±Р°РІР»РµРЅРёСЏ РїРµСЂРµРјРµРЅРЅС‹С…
+			it_name = sections_map->find(name); //РµСЃС‚СЊ Р»Рё СѓР¶Рµ С‚Р°РєР°СЏ СЃРµРєС†РёСЏ РІ РјР°СЃСЃРёРІРµ РїР°СЂСЃРµСЂР°
 
-			if (it_name == sections_map->end()) //если такой секции еще нет
+			if (it_name == sections_map->end()) //РµСЃР»Рё С‚Р°РєРѕР№ СЃРµРєС†РёРё РµС‰Рµ РЅРµС‚
 			{
-				//добавить ее
-				(*sections_map)[name] = sections_count; //добавить секцию в мап, соединяющий номера и названия секций
+				//РґРѕР±Р°РІРёС‚СЊ РµРµ
+				(*sections_map)[name] = sections_count; //РґРѕР±Р°РІРёС‚СЊ СЃРµРєС†РёСЋ РІ РјР°Рї, СЃРѕРµРґРёРЅСЏСЋС‰РёР№ РЅРѕРјРµСЂР° Рё РЅР°Р·РІР°РЅРёСЏ СЃРµРєС†РёР№
 				current_section_number = sections_count;
 				++sections_count;
 
-				std::map<std::string, std::string> new_temp_map{}; //временный пустой мап
-				variables_str_array->push_back(new_temp_map); //добавить пустой map в массив
+				std::map<std::string, std::string> new_temp_map{}; //РІСЂРµРјРµРЅРЅС‹Р№ РїСѓСЃС‚РѕР№ РјР°Рї
+				variables_str_array->push_back(new_temp_map); //РґРѕР±Р°РІРёС‚СЊ РїСѓСЃС‚РѕР№ map РІ РјР°СЃСЃРёРІ
 			}
-			else //такая секция уже была
+			else //С‚Р°РєР°СЏ СЃРµРєС†РёСЏ СѓР¶Рµ Р±С‹Р»Р°
 			{
-				current_section_number = (*sections_map)[name]; //индекс секции в массиве variables_str_array
+				current_section_number = (*sections_map)[name]; //РёРЅРґРµРєСЃ СЃРµРєС†РёРё РІ РјР°СЃСЃРёРІРµ variables_str_array
 			}
 			break;
 
-		case string_type::variable_: //переменная
+		case string_type::variable_: //РїРµСЂРµРјРµРЅРЅР°СЏ
 
-			if (current_section_number < 0) //еще не было добавлено ни одной секции, а все переменные должны принадлежать какой-либо секции
+			if (current_section_number < 0) //РµС‰Рµ РЅРµ Р±С‹Р»Рѕ РґРѕР±Р°РІР»РµРЅРѕ РЅРё РѕРґРЅРѕР№ СЃРµРєС†РёРё, Р° РІСЃРµ РїРµСЂРµРјРµРЅРЅС‹Рµ РґРѕР»Р¶РЅС‹ РїСЂРёРЅР°РґР»РµР¶Р°С‚СЊ РєР°РєРѕР№-Р»РёР±Рѕ СЃРµРєС†РёРё
 			{
-				incorrect_str_num = lines_count;  //номер строки, содержащей некорректный синтаксис
-				incorrect_str = temp_str;  //содержимое строки с некорректным синтаксисом
+				incorrect_str_num = lines_count;  //РЅРѕРјРµСЂ СЃС‚СЂРѕРєРё, СЃРѕРґРµСЂР¶Р°С‰РµР№ РЅРµРєРѕСЂСЂРµРєС‚РЅС‹Р№ СЃРёРЅС‚Р°РєСЃРёСЃ
+				incorrect_str = temp_str;  //СЃРѕРґРµСЂР¶РёРјРѕРµ СЃС‚СЂРѕРєРё СЃ РЅРµРєРѕСЂСЂРµРєС‚РЅС‹Рј СЃРёРЅС‚Р°РєСЃРёСЃРѕРј
 			}
 			else
 			{
-				//добавить или обновить переменную в мапе соответствующей секции
+				//РґРѕР±Р°РІРёС‚СЊ РёР»Рё РѕР±РЅРѕРІРёС‚СЊ РїРµСЂРµРјРµРЅРЅСѓСЋ РІ РјР°РїРµ СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‰РµР№ СЃРµРєС†РёРё
 				(*variables_str_array)[current_section_number][name] = value;
 			}
 
 			break;
 
-		case string_type::empty_:	   //пустая строка или комментарий			
+		case string_type::empty_:	   //РїСѓСЃС‚Р°СЏ СЃС‚СЂРѕРєР° РёР»Рё РєРѕРјРјРµРЅС‚Р°СЂРёР№			
 			break;
 
-		case string_type::invalid_:   //строка невалидная
-			incorrect_str_num = lines_count;  //номер строки, содержащей некорректный синтаксис
-			incorrect_str = temp_str;  //содержимое строки с некорректным синтаксисом
+		case string_type::invalid_:   //СЃС‚СЂРѕРєР° РЅРµРІР°Р»РёРґРЅР°СЏ
+			incorrect_str_num = lines_count;  //РЅРѕРјРµСЂ СЃС‚СЂРѕРєРё, СЃРѕРґРµСЂР¶Р°С‰РµР№ РЅРµРєРѕСЂСЂРµРєС‚РЅС‹Р№ СЃРёРЅС‚Р°РєСЃРёСЃ
+			incorrect_str = temp_str;  //СЃРѕРґРµСЂР¶РёРјРѕРµ СЃС‚СЂРѕРєРё СЃ РЅРµРєРѕСЂСЂРµРєС‚РЅС‹Рј СЃРёРЅС‚Р°РєСЃРёСЃРѕРј
 
 			break;
 		}
 
-		if (incorrect_str_num != 0) //не имеет смысла продолжать - в файле некорректные данные
+		if (incorrect_str_num != 0) //РЅРµ РёРјРµРµС‚ СЃРјС‹СЃР»Р° РїСЂРѕРґРѕР»Р¶Р°С‚СЊ - РІ С„Р°Р№Р»Рµ РЅРµРєРѕСЂСЂРµРєС‚РЅС‹Рµ РґР°РЅРЅС‹Рµ
 		{
 			invalid_data = true;
-			break; //прервать чтение данных из файла
+			break; //РїСЂРµСЂРІР°С‚СЊ С‡С‚РµРЅРёРµ РґР°РЅРЅС‹С… РёР· С„Р°Р№Р»Р°
 		}
 
 	}
 
 	fin.close();
-	file_read = true; //хранит информацию о том, удалось ли считать данные из файла
+	file_read = true; //С…СЂР°РЅРёС‚ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ С‚РѕРј, СѓРґР°Р»РѕСЃСЊ Р»Рё СЃС‡РёС‚Р°С‚СЊ РґР°РЅРЅС‹Рµ РёР· С„Р°Р№Р»Р°
 
 	if (variables_str_array->size() != sections_map->size())
 	{

@@ -1,92 +1,95 @@
-#pragma once
+п»ї#pragma once
 #include <iostream>
 #include <string>
 #include <map>
 #include <vector>
 #include <tuple>
+#include <regex>
 
 #include "parser_exceptions.h"
 
 enum class string_type
 {
-	section_,  //название секции
-	variable_, //переменная
-	empty_,	   //пустая строка или комментарий
-	invalid_   //строка невалидная
+	section_,  //РЅР°Р·РІР°РЅРёРµ СЃРµРєС†РёРё
+	variable_, //РїРµСЂРµРјРµРЅРЅР°СЏ
+	empty_,	   //РїСѓСЃС‚Р°СЏ СЃС‚СЂРѕРєР° РёР»Рё РєРѕРјРјРµРЅС‚Р°СЂРёР№
+	invalid_   //СЃС‚СЂРѕРєР° РЅРµРІР°Р»РёРґРЅР°СЏ
 };
 
 class ini_parser
 {
 private:
-	//корректность работы парсера
-	bool parser_invalid = false; //есть проблемы с парсером
-	bool file_read = false; //хранит информацию о том, удалось ли считать данные из файла
-	bool invalid_data = false; //хранит информацию, есть ли в файле некорректная информация
+	//РєРѕСЂСЂРµРєС‚РЅРѕСЃС‚СЊ СЂР°Р±РѕС‚С‹ РїР°СЂСЃРµСЂР°
+	bool parser_invalid = false; //РµСЃС‚СЊ РїСЂРѕР±Р»РµРјС‹ СЃ РїР°СЂСЃРµСЂРѕРј
+	bool file_read = false; //С…СЂР°РЅРёС‚ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ С‚РѕРј, СѓРґР°Р»РѕСЃСЊ Р»Рё СЃС‡РёС‚Р°С‚СЊ РґР°РЅРЅС‹Рµ РёР· С„Р°Р№Р»Р°
+	bool invalid_data = false; //С…СЂР°РЅРёС‚ РёРЅС„РѕСЂРјР°С†РёСЋ, РµСЃС‚СЊ Р»Рё РІ С„Р°Р№Р»Рµ РЅРµРєРѕСЂСЂРµРєС‚РЅР°СЏ РёРЅС„РѕСЂРјР°С†РёСЏ
 
-	//если исходный файл содержит некорректный синтаксис
-	int incorrect_str_num = 0;  //номер строки, содержащей некорректный синтаксис
-	std::string incorrect_str;  //содержимое строки с некорректным синтаксисом
+	//РµСЃР»Рё РёСЃС…РѕРґРЅС‹Р№ С„Р°Р№Р» СЃРѕРґРµСЂР¶РёС‚ РЅРµРєРѕСЂСЂРµРєС‚РЅС‹Р№ СЃРёРЅС‚Р°РєСЃРёСЃ
+	int incorrect_str_num = 0;  //РЅРѕРјРµСЂ СЃС‚СЂРѕРєРё, СЃРѕРґРµСЂР¶Р°С‰РµР№ РЅРµРєРѕСЂСЂРµРєС‚РЅС‹Р№ СЃРёРЅС‚Р°РєСЃРёСЃ
+	std::string incorrect_str;  //СЃРѕРґРµСЂР¶РёРјРѕРµ СЃС‚СЂРѕРєРё СЃ РЅРµРєРѕСЂСЂРµРєС‚РЅС‹Рј СЃРёРЅС‚Р°РєСЃРёСЃРѕРј
 
 private:
-	//все значения хранятся в виде строк
-	std::vector<std::map<std::string, std::string>>* variables_str_array = nullptr; //массивом мапов, которые содержат строки
-	std::map<std::string, int>* sections_map = nullptr; //соответствие названия секции номеру массива variables_str_array
+	//РІСЃРµ Р·РЅР°С‡РµРЅРёСЏ С…СЂР°РЅСЏС‚СЃСЏ РІ РІРёРґРµ СЃС‚СЂРѕРє
+	std::vector<std::map<std::string, std::string>>* variables_str_array = nullptr; //РјР°СЃСЃРёРІРѕРј РјР°РїРѕРІ, РєРѕС‚РѕСЂС‹Рµ СЃРѕРґРµСЂР¶Р°С‚ СЃС‚СЂРѕРєРё
+	std::map<std::string, int>* sections_map = nullptr; //СЃРѕРѕС‚РІРµС‚СЃС‚РІРёРµ РЅР°Р·РІР°РЅРёСЏ СЃРµРєС†РёРё РЅРѕРјРµСЂСѓ РјР°СЃСЃРёРІР° variables_str_array
 
-	//текущая секция для добавления переменных
-	std::string current_section_name; //имя секции
-	int current_section_number = -1; //номер секции = индекс  этой секции в массиве variables_str_array
+	//С‚РµРєСѓС‰Р°СЏ СЃРµРєС†РёСЏ РґР»СЏ РґРѕР±Р°РІР»РµРЅРёСЏ РїРµСЂРµРјРµРЅРЅС‹С…
+	std::string current_section_name; //РёРјСЏ СЃРµРєС†РёРё
+	int current_section_number = -1; //РЅРѕРјРµСЂ СЃРµРєС†РёРё = РёРЅРґРµРєСЃ  СЌС‚РѕР№ СЃРµРєС†РёРё РІ РјР°СЃСЃРёРІРµ variables_str_array
 
-	std::string delete_spaces(const std::string& src_str); //удалить пробелы и знаки табуляции в начале строки
-	std::tuple<string_type, std::string, std::string> research_string(const std::string& src_str); //исследовать строку из файла: возвращаемый кортеж содержит код содержимого, название переменной или секции, значение переменной
+	std::string delete_spaces(const std::string& src_str); //СѓРґР°Р»РёС‚СЊ РїСЂРѕР±РµР»С‹ Рё Р·РЅР°РєРё С‚Р°Р±СѓР»СЏС†РёРё РІ РЅР°С‡Р°Р»Рµ СЃС‚СЂРѕРєРё
+	std::tuple<string_type, std::string, std::string> research_string(const std::string& src_str); //РёСЃСЃР»РµРґРѕРІР°С‚СЊ СЃС‚СЂРѕРєСѓ РёР· С„Р°Р№Р»Р°: РІРѕР·РІСЂР°С‰Р°РµРјС‹Р№ РєРѕСЂС‚РµР¶ СЃРѕРґРµСЂР¶РёС‚ РєРѕРґ СЃРѕРґРµСЂР¶РёРјРѕРіРѕ, РЅР°Р·РІР°РЅРёРµ РїРµСЂРµРјРµРЅРЅРѕР№ РёР»Рё СЃРµРєС†РёРё, Р·РЅР°С‡РµРЅРёРµ РїРµСЂРµРјРµРЅРЅРѕР№
 
-	std::string get_section_name(const int section_index); //получить имя секции по ее номеру
-	int get_section_number(const std::string& section_name); //получить номер секции по ее имени
-	std::tuple<std::string, std::string> get_section_variable_names(const std::string& src_str); //из строки запроса получить имя секции и имя переменной
-	std::string get_variable_value(const int section_index, const std::string& variable_name); //получить значение переменной по имени секции и имени переменной
+	std::string get_section_name(const int section_index); //РїРѕР»СѓС‡РёС‚СЊ РёРјСЏ СЃРµРєС†РёРё РїРѕ РµРµ РЅРѕРјРµСЂСѓ
+	int get_section_number(const std::string& section_name); //РїРѕР»СѓС‡РёС‚СЊ РЅРѕРјРµСЂ СЃРµРєС†РёРё РїРѕ РµРµ РёРјРµРЅРё
+	std::tuple<std::string, std::string> get_section_variable_names(const std::string& src_str); //РёР· СЃС‚СЂРѕРєРё Р·Р°РїСЂРѕСЃР° РїРѕР»СѓС‡РёС‚СЊ РёРјСЏ СЃРµРєС†РёРё Рё РёРјСЏ РїРµСЂРµРјРµРЅРЅРѕР№
+	std::string get_variable_value(const int section_index, const std::string& variable_name); //РїРѕР»СѓС‡РёС‚СЊ Р·РЅР°С‡РµРЅРёРµ РїРµСЂРµРјРµРЅРЅРѕР№ РїРѕ РёРјРµРЅРё СЃРµРєС†РёРё Рё РёРјРµРЅРё РїРµСЂРµРјРµРЅРЅРѕР№
 
 public:	
 	ini_parser();
-	ini_parser(const ini_parser& other);				// конструктор копирования	
-	ini_parser& operator = (const ini_parser& other);	// оператор копирующего присваивания
-	ini_parser(ini_parser&& other) noexcept;			// конструктор перемещения
-	ini_parser& operator=(ini_parser&& other) noexcept; // оператор перемещающего присваивания
+	ini_parser(const ini_parser& other);				// РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РєРѕРїРёСЂРѕРІР°РЅРёСЏ	
+	ini_parser& operator = (const ini_parser& other);	// РѕРїРµСЂР°С‚РѕСЂ РєРѕРїРёСЂСѓСЋС‰РµРіРѕ РїСЂРёСЃРІР°РёРІР°РЅРёСЏ
+	ini_parser(ini_parser&& other) noexcept;			// РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РїРµСЂРµРјРµС‰РµРЅРёСЏ
+	ini_parser& operator=(ini_parser&& other) noexcept; // РѕРїРµСЂР°С‚РѕСЂ РїРµСЂРµРјРµС‰Р°СЋС‰РµРіРѕ РїСЂРёСЃРІР°РёРІР°РЅРёСЏ
 	~ini_parser();
 
 	void fill_parser(const std::string& file_name);
-	bool print_all_sections();									//вывести на экран названия всех секций
-	bool print_all_sections_info();								//вывести на экран состав парсера
-	bool print_all_variables(const std::string& section_name);	//вывести на экран все переменные в секции
-	void check_parser();										//проверяет, нет ли в парсере проблем и выбрасывает исключение
-	void print_incorrect_info();								//вывести информацию о некорректных данных в файле		
-	std::string get_section_from_request(const std::string& request_str); //получить из строки запроса название секции
+	bool print_all_sections();									//РІС‹РІРµСЃС‚Рё РЅР° СЌРєСЂР°РЅ РЅР°Р·РІР°РЅРёСЏ РІСЃРµС… СЃРµРєС†РёР№
+	bool print_all_sections_info();								//РІС‹РІРµСЃС‚Рё РЅР° СЌРєСЂР°РЅ СЃРѕСЃС‚Р°РІ РїР°СЂСЃРµСЂР°
+	bool print_all_variables(const std::string& section_name);	//РІС‹РІРµСЃС‚Рё РЅР° СЌРєСЂР°РЅ РІСЃРµ РїРµСЂРµРјРµРЅРЅС‹Рµ РІ СЃРµРєС†РёРё
+	void check_parser();										//РїСЂРѕРІРµСЂСЏРµС‚, РЅРµС‚ Р»Рё РІ РїР°СЂСЃРµСЂРµ РїСЂРѕР±Р»РµРј Рё РІС‹Р±СЂР°СЃС‹РІР°РµС‚ РёСЃРєР»СЋС‡РµРЅРёРµ
+	void print_incorrect_info();								//РІС‹РІРµСЃС‚Рё РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РЅРµРєРѕСЂСЂРµРєС‚РЅС‹С… РґР°РЅРЅС‹С… РІ С„Р°Р№Р»Рµ		
+	std::string get_section_from_request(const std::string& request_str); //РїРѕР»СѓС‡РёС‚СЊ РёР· СЃС‚СЂРѕРєРё Р·Р°РїСЂРѕСЃР° РЅР°Р·РІР°РЅРёРµ СЃРµРєС†РёРё
 
 	template <class T>
-	T get_value(const std::string& input_str)			//основная функция парсера. Шаблон запроса "Имя_секции.Имя_переменной"
+	T get_value(const std::string& input_str)			//РѕСЃРЅРѕРІРЅР°СЏ С„СѓРЅРєС†РёСЏ РїР°СЂСЃРµСЂР°. РЁР°Р±Р»РѕРЅ Р·Р°РїСЂРѕСЃР° "РРјСЏ_СЃРµРєС†РёРё.РРјСЏ_РїРµСЂРµРјРµРЅРЅРѕР№"
 	{
 		try
 		{
-			check_parser(); //если в парсере есть проблемы, он сгенерирует ошибку
+			check_parser(); //РµСЃР»Рё РІ РїР°СЂСЃРµСЂРµ РµСЃС‚СЊ РїСЂРѕР±Р»РµРјС‹, РѕРЅ СЃРіРµРЅРµСЂРёСЂСѓРµС‚ РѕС€РёР±РєСѓ
 		}
 		catch (const ParserException_incorrect_data& ex)
 		{
-			//попробовать продолжить, но предупредить о возможной некорректности данных
+			//РїРѕРїСЂРѕР±РѕРІР°С‚СЊ РїСЂРѕРґРѕР»Р¶РёС‚СЊ, РЅРѕ РїСЂРµРґСѓРїСЂРµРґРёС‚СЊ Рѕ РІРѕР·РјРѕР¶РЅРѕР№ РЅРµРєРѕСЂСЂРµРєС‚РЅРѕСЃС‚Рё РґР°РЅРЅС‹С…
 			std::cout << ex.what() << "\n";
 		}
 
 		std::string section_name;
 		std::string variable_name;
 
-		std::tie(section_name, variable_name) = get_section_variable_names(input_str); //может выбросить исключение ParserException_incorrect_request()
+		std::tie(section_name, variable_name) = get_section_variable_names(input_str); //РјРѕР¶РµС‚ РІС‹Р±СЂРѕСЃРёС‚СЊ РёСЃРєР»СЋС‡РµРЅРёРµ ParserException_incorrect_request()
 
-		int section_index = get_section_number(section_name); //получить номер секции по ее номеру, возвращает -1, если секции нет
+		int section_index = get_section_number(section_name); //РїРѕР»СѓС‡РёС‚СЊ РЅРѕРјРµСЂ СЃРµРєС†РёРё РїРѕ РµРµ РЅРѕРјРµСЂСѓ, РІРѕР·РІСЂР°С‰Р°РµС‚ -1, РµСЃР»Рё СЃРµРєС†РёРё РЅРµС‚
 		if (section_index < 0)
 		{
 			throw ParserException_no_section();
 		}
 
-		std::string variable_value = get_variable_value(section_index, variable_name); //получить  значение переменной 
+		std::string variable_value = get_variable_value(section_index, variable_name); //РїРѕР»СѓС‡РёС‚СЊ  Р·РЅР°С‡РµРЅРёРµ РїРµСЂРµРјРµРЅРЅРѕР№ 
 
-		//определить тип запрашиваемой переменной
+		variable_value = std::regex_replace(variable_value, std::regex("([ \t])"), ""); //СѓР±СЂР°С‚СЊ РїСЂРѕР±РµР»С‹ Рё С‚Р°Р±СѓР»СЏС†РёСЋ
+
+		//РѕРїСЂРµРґРµР»РёС‚СЊ С‚РёРї Р·Р°РїСЂР°С€РёРІР°РµРјРѕР№ РїРµСЂРµРјРµРЅРЅРѕР№
 		if constexpr (std::is_same_v<T, int>)				//int
 		{
 			try
@@ -115,9 +118,10 @@ public:
 		}
 		else if constexpr (std::is_same_v<T, bool>)	//std::string
 		{
+			
 			return (variable_value != "0");			
 		}
-		else												//другие типы не предусмотрены
+		else												//РґСЂСѓРіРёРµ С‚РёРїС‹ РЅРµ РїСЂРµРґСѓСЃРјРѕС‚СЂРµРЅС‹
 		{
 			throw ParserException_type_error();
 		};

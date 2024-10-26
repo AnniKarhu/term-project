@@ -2,15 +2,12 @@
 #include <algorithm>
 #include <tuple>
 
-#include "Windows.h"
+//#include "Windows.h"
 
 #include "data_base.h"
 
 
-Data_base::Data_base(const std::string params_str) noexcept  : connection_str{ params_str } 
-{
-
-}
+Data_base::Data_base(const std::string params_str) noexcept  : connection_str{ params_str } {}
 
 // конструктор перемещения
 Data_base::Data_base(Data_base&& other) noexcept : connection_str{ other.connection_str } 	
@@ -62,20 +59,14 @@ std::string Data_base::get_last_error_desc() //получить описание
 
 void Data_base::print_last_error() //вывести информацию о последней ошибке
 {
-	
-	//все равно некоторые ошибки отображаются кракозябрами - вопрос с кодировками при работе с базой остается открытым
-	
 	std::cout << "Last error: " << last_error << "\n";
-
-	//SetConsoleOutputCP(1251);
-	//SetConsoleCP(1251);
 }
 
 bool Data_base::create_tables() //создать необходимые таблицы
 {
 	if ((connection_ptr == nullptr) || (!(connection_ptr->is_open())))
 	{
-		last_error = "Ошибка при создании таблиц базы данных - нет подключения к базе данных";
+		last_error = "Create table error. No database connection.";
 		return false;
 	}
 
@@ -110,7 +101,7 @@ bool Data_base::create_tables() //создать необходимые табл
 	}
 	catch (...)
 	{
-		last_error = "Ошибка при создании таблиц базы данных";
+		last_error = "Error creating database tables";
 		return false;
 	}	
 }
@@ -119,7 +110,7 @@ bool Data_base::create_templates() //создать шаблоны для раб
 {
 	if ((connection_ptr == nullptr) || (!(connection_ptr->is_open())))
 	{
-		last_error = "Ошибка при создании шаблонов запросов - нет подключения к базе данных";
+		last_error = "Error creating query templates - no connection to database.";
 		return false;
 	}
 
@@ -127,52 +118,31 @@ bool Data_base::create_templates() //создать шаблоны для раб
 	{
 		//добавление url
 		connection_ptr->prepare("insert_url", "insert into documents (url) values ($1)");
-		
-		//добавление word
-		//connection_ptr->prepare("insert_word", "insert into words (word) values ($1)");
 
-		//добавление частоты
-		//connection_ptr->prepare("insert_quantity", "insert into urls_words (word_id, url_id, quantity) values ($1, $2, $3)");
+		//добавление слова
+		connection_ptr->prepare("insert_word", "insert into words (word) values ($1)");
 
-		//изменение частоты
-		//connection_ptr->prepare("update_quantity", "update urls_words set quantitye = $3 where word_id = $1 and url_id = $2");
-		
-		//изменение клиента
-		//connection_ptr->prepare("update_user", "update users set username = $2, userlastname = $3, email = $4 where id = $1");
+		//получить id url страницы
+		connection_ptr->prepare("search_url_id", "select id from documents where url = $1");
 
-		//удаление телефона клиента
-		//connection_ptr->prepare("delete_phone", "delete from phones where user_id = $1 and phone = $2");
+		//получить id слова
+		connection_ptr->prepare("search_word_id", "select id from words where word = $1");
 
-		//удаление всех телефонов клиента
-		//connection_ptr->prepare("delete_user_phones", "delete from phones where user_id = $1");
+		//получить num - количество слов с word_id на странице с url_id
+		connection_ptr->prepare("search_url_word_num", "select quantity from urls_words where url_id = $1 and word_id = $2");
 
-		//удаление клиента
-		//connection_ptr->prepare("delete_user", "delete from users where id = $1");
+		//добавить новое значение - количество слов  word_id на странице с url_id
+		connection_ptr->prepare("add_url_word_num", "insert into urls_words(url_id, word_id, quantity) values($1, $2, $3)");
 
-		//поиск клиента по его id
-		//connection_ptr->prepare("search_user_by_id", "select * from users where id = $1");
-
-		//поиск клиента по его имени
-		//connection_ptr->prepare("search_user_by_name", "select * from users where username = $1");
-
-		//поиск клиента по его фамилии
-		//connection_ptr->prepare("search_user_by_lastname", "select * from users where userlastname = $1");
-
-		//поиск клиента по его email
-		//connection_ptr->prepare("search_user_by_email", "select * from users where email = $1");
-
-		//id клиента по его номеру телефона
-		//connection_ptr->prepare("search_user_id_by_phone", "select user_id from phones where phone = $1");
-
-		//поиск номера телефона по id клиента
-		//connection_ptr->prepare("select_phones_by_id", "select phone from phones where user_id = $1");		
+		//изменить значение - количество слов  word_id на странице с url_id		
+		connection_ptr->prepare("update_url_word_num", "update urls_words set quantity = $3 where  url_id = $1 and word_id = $2");		
 		
 		return true;
 	}
 	
 	catch (...)
 	{
-		last_error = "Ошибка при создании шаблонов запросов";
+		last_error = "Error creating query templates";
 		return false;
 	}
 }
@@ -195,7 +165,7 @@ bool Data_base::test_insert() //убрать после отладки
 {
 	if (connection_ptr == nullptr)
 	{
-		last_error = "Нет подключения к базе данных";
+		last_error = "No database connection";
 		return false; 
 	}
 
@@ -213,7 +183,7 @@ bool Data_base::test_insert() //убрать после отладки
 			"insert into documents (url) values "
 			"('http://google.com/'), "
 			"('http://google2.com/'), "
-			"('http://google2.com/'); ");		
+			"('http://google3.com/'); ");		
 
 		tx.commit();		
 	}
@@ -224,31 +194,27 @@ bool Data_base::test_insert() //убрать после отладки
 	}
 	catch (...)
 	{
-		last_error = "Ошибка при добавлении данных";
+		last_error = "Error adding data";
 		return false;
 	}
 
 	return true;
-	
-
 }
 
-/*взаимодействие пользователя с базой данных*/
-
-//добавить нового пользователя
-bool Data_base::add_new_user(std::string UserName, std::string UserLastName, std::string UserEmail) 
+/*взаимодействие с базой данных*/
+bool Data_base::add_new_str(const std::string& str, std::string tmpl)
 {
 	if (connection_ptr == nullptr)
 	{
-		last_error = "Нет подключения к базе данных";
+		last_error = "No database connection";
 		return false;
 	}
-	
+
 	last_error = "";
 	try
 	{
 		pqxx::work tx{ *connection_ptr };
-		tx.exec_prepared("insert_user", UserName, UserLastName, UserEmail);
+		tx.exec_prepared(tmpl, str);
 		tx.commit();
 
 		return true;
@@ -260,327 +226,112 @@ bool Data_base::add_new_user(std::string UserName, std::string UserLastName, std
 	}
 }
 
-//поиск клиентов по произвольной строке - имя, фамилия, email, телефон
-std::map<int, std::tuple<std::string, std::string, std::string>> Data_base::get_users_list_by_string(std::string DefaultStr)
+bool Data_base::add_new_url(const std::string& url_str) //добавить новый урл
 {
-	//все записи с совпадением по имени
-	std::map<int, std::tuple<std::string, std::string, std::string>> result_map_name;
-	result_map_name = get_users_list_by_name(DefaultStr);
-	
-	//все записи с совпадением по фамилии
-	std::map<int, std::tuple<std::string, std::string, std::string>> result_map_lastname;
-	result_map_lastname = get_users_list_by_lastname(DefaultStr);
-	
-	//все записи с совпадением по email
-	std::map<int, std::tuple<std::string, std::string, std::string>> result_map_email;
-	result_map_email = get_users_list_by_email(DefaultStr);
-	
-	//пользователь с совпадением по телефону
-	std::tuple<int, std::string, std::string, std::string> result_tuple_phone;
-	int res_id = get_user_id_by_phone(DefaultStr);	 
-	result_tuple_phone = get_user_by_id(res_id);
-	
-	std::map<int, std::tuple<std::string, std::string, std::string>> result_map;
-
-	//объединить полученные мапы
-	std::merge(result_map_name.begin(), result_map_name.end(), result_map_lastname.begin(), result_map_lastname.end(), std::inserter(result_map, result_map.begin()));
-	std::merge(result_map.begin(), result_map.end(), result_map_email.begin(), result_map_email.end(), std::inserter(result_map, result_map.begin()));
-	result_map[std::get<0>(result_tuple_phone)] = std::make_tuple(std::get<1>(result_tuple_phone), std::get<2>(result_tuple_phone), std::get<3>(result_tuple_phone));
-
-	//удалить из результата вариант с id=-1, если он там есть
-	result_map.erase(-1);
-
-	return result_map;
-}
- 
-//все пользователи с заданным именем
-std::map<int, std::tuple<std::string, std::string, std::string>> Data_base::get_users_list_by_name(std::string UserName) 
-{	
-	std::map<int, std::tuple<std::string, std::string, std::string>> result_map;
-	if (connection_ptr == nullptr)
-	{
-		last_error = "Нет подключения к базе  данных";
-		return result_map;
-	}
-
-	last_error = "";
-	try
-	{
-		pqxx::work tx{ *connection_ptr };
-		auto query_res = tx.exec_prepared("search_user_by_name", UserName);	
-		for (auto row : query_res)
-		{
-				auto temp_tuple =  std::make_tuple(row["username"].as<std::string>(), row["userlastname"].as<std::string>(), row["email"].as<std::string>());
-			int temp_int = row["id"].as<int>();
-		
-			result_map[temp_int] =  temp_tuple;
-		}
-	}
-	catch (const std::exception& ex)
-	{
-		last_error = ex.what();		
-	}
-
-	return result_map;		
+	return add_new_str(url_str, "insert_url");
 }
 
-//все пользователи с заданной фамилией
-std::map<int, std::tuple<std::string, std::string, std::string>> Data_base::get_users_list_by_lastname(std::string UserLastName)
+bool Data_base::add_new_word(const std::string& word_str) //добавить новое слово
 {
-	std::map<int, std::tuple<std::string, std::string, std::string>> result_map;
-	if (connection_ptr == nullptr)
-	{
-		last_error = "Нет подключения к базе  данных";
-		return result_map;
-	}
-
-	last_error = "";
-	try
-	{
-		pqxx::work tx{ *connection_ptr };
-		auto query_res = tx.exec_prepared("search_user_by_lastname", UserLastName);
-		for (auto row : query_res)
-		{
-			auto temp_tuple = std::make_tuple(row["username"].as<std::string>(), row["userlastname"].as<std::string>(), row["email"].as<std::string>());
-			int temp_int = row["id"].as<int>();
-
-			result_map[temp_int] = temp_tuple;
-		}
-	}
-	catch (const std::exception& ex)
-	{
-		last_error = ex.what();
-	}
-
-	return result_map;
+	return add_new_str(word_str, "insert_word");
 }
 
-//все пользователи с заданным email
-std::map<int, std::tuple<std::string, std::string, std::string>> Data_base::get_users_list_by_email(std::string UserEmail)
-{	
-	std::map<int, std::tuple<std::string, std::string, std::string>> result_map;
-	if (connection_ptr == nullptr)
-	{
-		last_error = "Нет подключения к базе  данных";
-		return result_map;
-	}
 
-	last_error = "";
-	try
-	{
-		pqxx::work tx{ *connection_ptr };
-		auto query_res = tx.exec_prepared("search_user_by_email", UserEmail);
-		for (auto row : query_res)
-		{
-			auto temp_tuple = std::make_tuple(row["username"].as<std::string>(), row["userlastname"].as<std::string>(), row["email"].as<std::string>());
-			int temp_int = row["id"].as<int>();
-
-			result_map[temp_int] = temp_tuple;
-		}
-	}
-	catch (const std::exception& ex)
-	{
-		last_error = ex.what();
-	}
-
-	return result_map;
+int Data_base::get_url_id(const std::string& url_str) //узнать id url
+{
+	return get_str_id(url_str, "search_url_id");
 }
 
-// id клиента с заданным телефоном
-int Data_base::get_user_id_by_phone(std::string UserPhone)
+int Data_base::get_word_id(const std::string& word_str) //узнать id слова
+{
+	return get_str_id(word_str, "search_word_id");
+}
+
+int Data_base::get_str_id(const std::string& str, std::string tmpl)
 {
 	if (connection_ptr == nullptr)
 	{
-		last_error = "Нет подключения к базе  данных";
+		last_error = "No database connection";
 		return -1;
 	}
 
 	last_error = "";
+
 	try
 	{
 		pqxx::work tx{ *connection_ptr };
-	
-		auto query_res = tx.exec_prepared("search_user_id_by_phone", UserPhone);
+
+		auto query_res = tx.exec_prepared(tmpl, str);
 		if (query_res.empty())
 		{
 			return -1;
 		}
 
 		auto row = query_res.begin();
-		int res_int = row["user_id"].as<int>();
+		int res_int = row["id"].as<int>();
 		return res_int; //вернуть первый (он же должен быть и единственным) результат
 	}
 	catch (const std::exception& ex)
 	{
 		last_error = ex.what();
 		return -1;
-	}	
+	}
 }
 
-//получить информацию о клиенте по его id	
-std::tuple<int, std::string, std::string, std::string> Data_base::get_user_by_id(int UserId)
+bool  Data_base::get_word_url_exist(int url_id, int word_id) //существует ли запись с такими id страницы и слова
 {
-	auto temp_tuple = std::make_tuple(-1, "", "", "");
 	if (connection_ptr == nullptr)
 	{
-		last_error = "Нет подключения к базе  данных";
-		return temp_tuple;
+		last_error = "No database connection";
+		return false;
 	}
 
 	last_error = "";
+	pqxx::work tx{ *connection_ptr };
+
+	auto query_res = tx.exec_prepared("search_url_word_num", url_id, word_id);
+
+	if (query_res.empty()) //пустой результат		
+	{
+		return false;
+	}
+	else
+		return true;
+}
+
+bool Data_base::new_word_url_pair(int url_id, int word_id, int num, std::string tmpl)
+{
+	if (connection_ptr == nullptr)
+	{
+		last_error = "No database connection";
+		return false;
+	}
+
+	last_error = "";
+	
 	try
 	{
 		pqxx::work tx{ *connection_ptr };
+		tx.exec_prepared(tmpl, url_id, word_id, num);
+		tx.commit();
 
-		auto query_res = tx.exec_prepared("search_user_by_id", UserId);	
-
-		if (query_res.empty()) //|| //пустой результат
-		//	(query_res.size() > 1)) //больше одной строки результат - значит, в базе  некорректные данные
-		{
-			return temp_tuple;
-		}
-		auto row = query_res.begin();
-		auto result_tuple = std::make_tuple(row["id"].as<int>(), row["username"].as<std::string>(), row["userlastname"].as<std::string>(), row["email"].as<std::string>());
-		return result_tuple; //вернуть первый (он же должен быть и единственным) результат	
+		return true;
 	}
 	catch (const std::exception& ex)
 	{
 		last_error = ex.what();
-		return temp_tuple;
+		return false;
 	}	
 }
 
-//получить список номеров телефонов по id клиента
-std::vector<std::string> Data_base::get_phones_list_by_user_id(int UserId)
+bool Data_base::add_new_word_url_pair(int url_id, int word_id, int num) //добавить новое значение - количество слов на странице
 {
-	std::vector<std::string> phones_vector;	  
-
-	if (connection_ptr == nullptr)	{
-		last_error = "Нет подключения к базе  данных";
-		return  phones_vector;		
-	}
-
-	last_error = "";
-	try
-	{
-		pqxx::work tx{ *connection_ptr };
-		auto query_res = tx.exec_prepared("select_phones_by_id", UserId);
-
-		for (auto row : query_res)
-		{
-			phones_vector.push_back(row["phone"].as<std::string>());		
-		}
-	}
-	catch (const std::exception& ex)
-	{
-		last_error = ex.what();		
-	}
-
-	return  phones_vector;
+	return new_word_url_pair(url_id, word_id, num, "add_url_word_num");
 }
 
-//добавление телефона пользователю с известным id
-bool Data_base::add_user_phone(int user_id, std::string user_phone)
+bool Data_base::update_word_url_pair(int url_id, int word_id, int num) //изменить количество слов на странице
 {
-	bool result = false;
-	if (connection_ptr == nullptr) {
-		last_error = "Нет подключения к базе  данных";
-		return  false;
-	}
-
-	last_error = "";
-	try
-	{
-		pqxx::work tx{ *connection_ptr };
-		tx.exec_prepared("insert_phone", user_id, user_phone);
-		tx.commit();
-		result = true;
-	}
-	catch (const std::exception& ex)
-	{
-		last_error = ex.what();
-		result = false;
-	}
-
-	return result;	
+	return new_word_url_pair(url_id, word_id, num, "update_url_word_num");
 }
 
-//изменение данных пользователя с заданным id
-bool Data_base::update_user_data(int user_id, std::string new_name, std::string new_lastname, std::string new_email)
-{
-	bool result = false;
-	if (connection_ptr == nullptr) {
-		last_error = "Нет подключения к базе  данных";
-		return  false;
-	}
-
-	last_error = "";
-	try
-	{
-		pqxx::work tx{ *connection_ptr };
-		tx.exec_prepared("update_user", user_id, new_name, new_lastname, new_email);		
-		tx.commit();
-		result = true;
-	}
-	catch (const std::exception& ex)
-	{
-		last_error = ex.what();
-		result = false;
-	}
-
-	return result;	
-}
-
-//удаление известного номера телефона  клиента с заданным id
-bool Data_base::delete_user_phone(int user_id, std::string user_phone)
-{
-	bool result = false;
-	if (connection_ptr == nullptr) {
-		last_error = "Нет подключения к базе  данных";
-		return  false;
-	}
-
-	last_error = "";
-	try
-	{
-		pqxx::work tx{ *connection_ptr };
-		tx.exec_prepared("delete_phone", user_id, user_phone);
-		tx.commit();
-		result = true;
-	}
-	catch (const std::exception& ex)
-	{
-		last_error = ex.what();
-		result = false;
-	}
-
-	return result;
-}
-
-//удалить  клиента с заданным id
-bool Data_base::delete_user(int user_id)
-{
-	bool result = false;
-	if (connection_ptr == nullptr) {
-		last_error = "Нет подключения к базе  данных";
-		return  false;
-	}
-
-	last_error = "";
-	try
-	{
-		pqxx::work tx{ *connection_ptr };
-		tx.exec_prepared("delete_user_phones", user_id); //удаление всех номеров телефонов
-		tx.exec_prepared("delete_user", user_id); //удаление записи о клиенте
-		tx.commit();
-		result = true;
-	}
-	catch (const std::exception& ex)
-	{
-		last_error = ex.what();
-		result = false;
-	}
-
-	return result;
-}
 

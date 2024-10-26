@@ -1,4 +1,4 @@
-#include "html_parser.h"
+п»ї#include "html_parser.h"
 
 std::string html_parser::complete_url(const std::string& in_url, const std::string& url_base)
 {
@@ -38,20 +38,20 @@ std::set<std::string> html_parser::get_urls_from_html(const std::string& html_bo
 
     host_url = get_base_host(host_url);
 
-    //поиск ссылок <a href>
+    //РїРѕРёСЃРє СЃСЃС‹Р»РѕРє <a href>
     std::smatch res1;
     std::regex r1("<a (.?[^>]*?)href=\"(.*?)\"");
     while (regex_search(s2, res1, r1))
     {     
         std::string find_str = res1.str();       
-        std::string url_str = std::regex_replace(find_str, std::regex("<a (.?[^>]*?)href=\""), ""); //удалить все атрибуты между именем a и атрибутом href
-        url_str = std::regex_replace(url_str, std::regex("\""), ""); //удалить все кавычки
-        url_str = std::regex_replace(url_str, std::regex("/$"), ""); //удалить слеш в конце строки       
-        std::string new_base_path = get_base_path(url_str); //найти базовую часть пути  
+        std::string url_str = std::regex_replace(find_str, std::regex("<a (.?[^>]*?)href=\""), ""); //СѓРґР°Р»РёС‚СЊ РІСЃРµ Р°С‚СЂРёР±СѓС‚С‹ РјРµР¶РґСѓ РёРјРµРЅРµРј a Рё Р°С‚СЂРёР±СѓС‚РѕРј href
+        url_str = std::regex_replace(url_str, std::regex("\""), ""); //СѓРґР°Р»РёС‚СЊ РІСЃРµ РєР°РІС‹С‡РєРё
+        url_str = std::regex_replace(url_str, std::regex("/$"), ""); //СѓРґР°Р»РёС‚СЊ СЃР»РµС€ РІ РєРѕРЅС†Рµ СЃС‚СЂРѕРєРё       
+        std::string new_base_path = get_base_path(url_str); //РЅР°Р№С‚Рё Р±Р°Р·РѕРІСѓСЋ С‡Р°СЃС‚СЊ РїСѓС‚Рё  
         
         
-        std::string suf_str = url_str.erase(0, new_base_path.size()); //найти имя страницы или скрипта       
-        std::string final_url = complete_url(new_base_path, base_str) + suf_str; //финальный вид урла
+        std::string suf_str = url_str.erase(0, new_base_path.size()); //РЅР°Р№С‚Рё РёРјСЏ СЃС‚СЂР°РЅРёС†С‹ РёР»Рё СЃРєСЂРёРїС‚Р°       
+        std::string final_url = complete_url(new_base_path, base_str) + suf_str; //С„РёРЅР°Р»СЊРЅС‹Р№ РІРёРґ СѓСЂР»Р°
       
         if (check_this_host_only(host_url, final_url, this_host_only))
         {
@@ -62,7 +62,7 @@ std::set<std::string> html_parser::get_urls_from_html(const std::string& html_bo
             std::cout << "foreign url not added " << final_url << "\n";
         }*/
        
-        s2 = res1.suffix(); //продолжить поиск в оставшейся части      
+        s2 = res1.suffix(); //РїСЂРѕРґРѕР»Р¶РёС‚СЊ РїРѕРёСЃРє РІ РѕСЃС‚Р°РІС€РµР№СЃСЏ С‡Р°СЃС‚Рё      
     };     
     return urls_set;
 }
@@ -82,7 +82,7 @@ std::string html_parser::clear_tags(const std::string& html_body_str)
 
     std::string regex_str;
 
-    //вытащить текст из title
+    //РІС‹С‚Р°С‰РёС‚СЊ С‚РµРєСЃС‚ РёР· title
     std::string res_str;
     std::smatch res1;
     regex_str = "<title>(.?)[^<]*";
@@ -93,7 +93,7 @@ std::string html_parser::clear_tags(const std::string& html_body_str)
         s2 = std::regex_replace(s2, std::regex(res_str), "");
     }
 
-    regex_str = ("^.+?(<body)");//удалить все до тега body
+    regex_str = ("^.+?(<body)");//СѓРґР°Р»РёС‚СЊ РІСЃРµ РґРѕ С‚РµРіР° body
     s2 = std::regex_replace(s2, std::regex(regex_str), "");
    
     regex_str = "<(.?)[^>][^<]*>";    
@@ -105,10 +105,10 @@ std::string html_parser::clear_tags(const std::string& html_body_str)
     res_str += " ";
     res_str += s2;    
 
-    res_str = std::regex_replace(res_str, std::regex("([\.,:;!?\\\"'*+=_~#$%^&])"), " "); //убрать знаки препинания и спец символы
-    res_str = std::regex_replace(res_str, std::regex(" {2,}"), " "); //убрать лишние пробелы
+    res_str = std::regex_replace(res_str, std::regex("([\.,:;!?\\\"'*+=_~#$%^&])"), " "); //СѓР±СЂР°С‚СЊ Р·РЅР°РєРё РїСЂРµРїРёРЅР°РЅРёСЏ Рё СЃРїРµС† СЃРёРјРІРѕР»С‹
+    res_str = std::regex_replace(res_str, std::regex(" {2,}"), " "); //СѓР±СЂР°С‚СЊ Р»РёС€РЅРёРµ РїСЂРѕР±РµР»С‹
     
-    //все строчные
+    //РІСЃРµ СЃС‚СЂРѕС‡РЅС‹Рµ
     std::transform(res_str.begin(), res_str.end(), res_str.begin(),
         [](unsigned char c) { return std::tolower(c); });
 
@@ -181,7 +181,7 @@ std::map<std::string, unsigned  int> html_parser::collect_words(const std::strin
 {
     std::string search_str = text_str;   
 
-    //извлечь следующее слово
+    //РёР·РІР»РµС‡СЊ СЃР»РµРґСѓСЋС‰РµРµ СЃР»РѕРІРѕ
     std::smatch res;
     std::regex r("(.[^ ]*)");
 
@@ -213,9 +213,9 @@ std::map<std::string, unsigned  int> html_parser::collect_words(const std::strin
         return words_map;
 }
 
-bool html_parser::check_this_host_only(const std::string& host_url, const std::string& url_str, bool this_host_only) //проверка, является ли урл требуемым хостом
+bool html_parser::check_this_host_only(const std::string& host_url, const std::string& url_str, bool this_host_only) //РїСЂРѕРІРµСЂРєР°, СЏРІР»СЏРµС‚СЃСЏ Р»Рё СѓСЂР» С‚СЂРµР±СѓРµРјС‹Рј С…РѕСЃС‚РѕРј
 {
-	if (!(this_host_only)) return true; //не нужна проверка
+	if (!(this_host_only)) return true; //РЅРµ РЅСѓР¶РЅР° РїСЂРѕРІРµСЂРєР°
 
 	if (url_str.find(host_url) != 0)
 	{

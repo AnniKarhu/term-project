@@ -68,7 +68,7 @@ int main()
 	
 	Spider spider(spider_data);	
 	std::cout << "Start indexing from " << spider_data.start_url << std::endl;		
-	spider.start_threads_work(); //старт пула потоков паука			
+	spider.start_spider(); //старт пула потоков паука			
 
 	
 

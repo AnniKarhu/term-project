@@ -1,25 +1,22 @@
-
+ï»¿
 #include "http_req.h"
 
 http_req::http_req(std::string _full_url) : full_url(_full_url) {}
 
 bool http_req::check_url()
 {
-	//std::cout << " full url = " << full_url << "\n";	
-
 	size_t pos = full_url.find(url_start());
-
 	if (pos != 0) return false;
 	
 	full_url.erase(pos, url_start().length());	
-
-	//óäàëèòü ëèøíèå ñëåøè èç íà÷àëà õîñòà (íàïðèìåð, òàêèå çàïðîñû http::////example.com) 
-	while (!(pos = full_url.find("/")))
+	
+	while (!(pos = full_url.find("/")))//ÑƒÐ´Ð°Ð»Ð¸Ñ‚ÑŒ Ð»Ð¸ÑˆÐ½Ð¸Ðµ ÑÐ»ÐµÑˆÐ¸ Ð¸Ð· Ð½Ð°Ñ‡Ð°Ð»Ð° Ñ…Ð¾ÑÑ‚Ð° (Ð½Ð°Ð¿Ñ€Ð¸Ð¼ÐµÑ€, Ñ‚Ð°ÐºÐ¸Ðµ Ð·Ð°Ð¿Ñ€Ð¾ÑÑ‹ http::////example.com) 
 	{
 		full_url.erase(0, 1);
 	}
 
 	pos = full_url.find("/");
+
 	if (pos == std::string::npos)
 	{
 		host = full_url;
