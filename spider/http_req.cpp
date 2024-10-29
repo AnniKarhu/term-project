@@ -68,6 +68,9 @@ bool http_req::get_page()
 		http::request<http::string_body> req{ http::verb::get, target, version };
 		req.set(http::field::host, host);
 		req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+		//req.set(http::field::encoding, "windows-1251");
+		req.set(http::field::encoding, "utf-8");
+		
 
 		// Send the HTTP request to the remote host
 		http::write(stream, req);
@@ -117,7 +120,13 @@ void http_req::fill_response_fields(http::response<http::dynamic_body>& res)
 
 				}
 			
-				html_body_str = boost::beast::buffers_to_string(res.body().data());				
+				//std::cout << boost::beast::buffers_to_string(res.body().data());
+
+				html_body_str = boost::beast::buffers_to_string(res.body().data());	
+
+			//	std::wstring wstr(html_body_str.begin(), html_body_str.end());
+			//	std::wcout << "\n\n___________________wstr = \n" << wstr << "\n";
+
 				break;
 			}
 

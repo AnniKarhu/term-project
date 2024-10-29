@@ -100,50 +100,89 @@ int main()
     return EXIT_SUCCESS;
 }
 
-запрос из БД
+//запрос из БД
+//
+//1. такая выборка включает только список адресов (уникальных), в которых встречаются искомые слова
+////select distinct url from(select* from urls_words
+////	inner  join  documents on  urls_words.url_id = documents.id) where word_id = 1 or word_id = 5 or word_id = 6;
+//select distinct url from
+//(select * from urls_words
+//	inner  join
+//	documents on  urls_words.url_id = documents.id) as Table_A
+//	inner join
+//	words on Table_A.word_id = words.id where word = 'example' or word = 'domain' or word = 'and';
+//
+//
+//этот список сохранить в виде std::map map_urls_list <string, int> string - url, int multiplier = 0
+//
+//
+//2. такая выборка содержит число - количество строк с урл = заданному
+////select count(*) from(select * from(select * from urls_words
+////	inner  join  documents on  urls_words.url_id = documents.id) where word_id = 1 or word_id = 5 or word_id = 6) where url = 'https://example.com/';
+//
+//select count(*) from
+//(select* from urls_words
+//	inner  join
+//	documents on  urls_words.url_id = documents.id) as Table_A
+//	inner join
+//	words on Table_A.word_id = words.id where(word = 'example' or word = 'domain' or word = 'for') and url = 'https://example.com/';
+//
+//если это число = числу слов в запросе пользователя, установить multiplier = 1 для записи этого урла в std::map map_urls_list 
+//
+//3.
+//такая выборка включает все поля и все строки	
+////select* from(select* from urls_words
+////	inner  join  documents on  urls_words.url_id = documents.id) where word_id = 1 or word_id = 5 or word_id = 6;
+//select * from
+//(select * from urls_words
+//	inner  join
+//	documents on  urls_words.url_id = documents.id) as Table_A
+//	inner join
+//	words on Table_A.word_id = words.id where(word = 'example' or word = 'domain' or word = 'for');
+//
+//такая запись хранить урлы и количество вхождений слов - урлы только те, в которых встречаются все слова
+//select quantity, url from
+//(select* from urls_words
+//	inner  join
+//	documents on  urls_words.url_id = documents.id) as Table_A
+//	inner join
+//	words on Table_A.word_id = words.id where(word = 'example' or word = 'domain' or word = 'for');
+//
+//создать новый результирующий std::map map_result
+//
+//перебрать все записи из этого результата:
+//3.1 найти запись в std::map map_urls_list с соответсвующим url. Если его multiplier =0, перейти к следующей записи
+//3.2 найти запись в std::map map_result с соответсвующим url и сохранить из него значение количества слов count.
+//3.3. к количеству слов добавить значение quantity из выборки
+//3.4. сохранить новое значение count для этого урл в map_result
+//
+//4. результат после обработки всех записей - std::map map_result
+//5. std::map map_result нужно переписать в вектор tuple<string url, int count>
+//6. отсортировать новый вектор по значению count
+//сортировка вектора компаратором https ://ejudge.179.ru/tasks/cpp/total/242.html
+//
+//Пример реализации такой функции для сортировки значений по последней цифре :
+//
+//bool cmp(int a, int b) вместо a и b будут tuple<string, int>
+//{
+//	return a % 10 < b % 10; сравнивать буду int из туплов
+//}
+//
+//Эта функция передается в функцию sort третьим параметром :
+//vector a 
+//sort(a.begin(), a.end(), cmp);
+//
+//
+//
+//
+//объединенная выборка из базы по нужным словам запроса
+//select* from
+//(select* from urls_words
+//	inner  join
+//	documents on  urls_words.url_id = documents.id) as Table_A
+//	inner join
+//	words on Table_A.word_id = words.id where word = 'example' or word = 'domain' or word = 'and';
 
-
-
-1. такая выборка включает только список адресов (уникальных), в которых встречаются искомые слова
-select distinct url from(select* from urls_words
-	inner  join  documents on  urls_words.url_id = documents.id) where word_id = 1 or word_id = 5 or word_id = 6;
-этот список сохранить в виде std::map map_urls_list <string, int> string - url, int multiplier = 0
-
-
-2. такая выборка содержит число - количество строк с урл = заданному
-select count(*) from(select * from(select * from urls_words
-	inner  join  documents on  urls_words.url_id = documents.id) where word_id = 1 or word_id = 5 or word_id = 6) where url = 'https://example.com/';
-
-если это число = числу слов в запросе пользователя, установить multiplier = 1 для записи этого урла в std::map map_urls_list 
-
-3.
-такая выборка включает все поля и все строки	
-select* from(select* from urls_words
-	inner  join  documents on  urls_words.url_id = documents.id) where word_id = 1 or word_id = 5 or word_id = 6;
-
-создать новый результирующий std::map map_result
-
-перебрать все записи из этого результата:
-3.1 найти запись в std::map map_urls_list с соответсвующим url. Если его multiplier =0, перейти к следующей записи
-3.2 найти запись в std::map map_result с соответсвующим url и сохранить из него значение количества слов count.
-3.3. к количеству слов добавить значение quantity из выборки
-3.4. сохранить новое значение count для этого урл в map_result
-
-4. результат после обработки всех записей - std::map map_result
-5. std::map map_result нужно переписать в вектор tuple<string url, int count>
-6. отсортировать новый вектор по значению count
-сортировка вектора компаратором https ://ejudge.179.ru/tasks/cpp/total/242.html
-
-Пример реализации такой функции для сортировки значений по последней цифре :
-vector a 
-bool cmp(int a, int b) вместо a и b будут tuple<string, int>
-{
-	return a % 10 < b % 10; сравнивать буду int из туплов
-}
-
-Эта функция передается в функцию sort третьим параметром :
-
-sort(a.begin(), a.end(), cmp);
 
 
 

@@ -178,7 +178,7 @@ bool Spider::work_function(const url_item& new_url_item, std::set<std::string> &
 				}				
 			}
 			
-			std::string text_str = my_html_parser.clear_tags(html_request->get_html_body_str());				
+			std::string text_str = my_html_parser.clear_tags(html_request->get_html_body_str());
 			new_words_map.clear();
 			new_words_map = my_html_parser.collect_words(text_str);
 			break;

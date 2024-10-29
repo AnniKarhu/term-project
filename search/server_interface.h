@@ -16,6 +16,7 @@
 //#include <vector>
 #include <fstream>
 #include <regex>
+#include <set>
 
 #include "data_base.h"
 
@@ -24,8 +25,10 @@ namespace http = beast::http;           // from <boost/beast/http.hpp>
 namespace net = boost::asio;            // from <boost/asio.hpp>
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
-std::string open_start_file_search_result(std::string file_path);
-bool split_str_content(std::string source_str, std::string& start_str, std::string& end_str);
+std::string open_start_file_search_result(const std::string& file_path); //получить содержимое файла html для вывода результата клиенту
+bool split_str_content(const std::string& source_str, std::string& start_str, std::string& end_str); //разделить строку на 2 части по делимитеру "<!--search result below-->"
+std::string clear_request_string(const std::string& source_str); //очистить строку поиска от служебного содержимого
+std::set<std::string> get_words_request_set(const std::string& source_str); //создать set из слов запроса
 
 // Return a reasonable mime type based on the extension of a file.
 beast::string_view mime_type(beast::string_view path)
@@ -199,10 +202,15 @@ http::message_generator handle_request(
     }
 
     //POST request
-    std::string req_body;
 
-    req_body = req.body();
-    std::cout << "req.body() = " << req_body << "\n\n";
+    std::cout << "req.body() = " << req.body() << "\n\n";
+    std::string request_string  = clear_request_string (req.body());
+
+   // request_string = ;
+    std::cout << "request_string = " << request_string << "\n\n";
+
+    get_words_request_set(request_string);
+   // почему в request_string плюсики вместо пробелов
 
     http::response<http::string_body> res{ http::status::ok, req.version() };
     res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
@@ -221,29 +229,8 @@ http::message_generator handle_request(
     {
         //std::cout << "start_str = \n" << start_str << "\n\n\n";
         //std::cout << "end_str = \n" << end_str << "\n";
-        body_str = start_str + "<p>Your search: " + req_body + "</p>\n" + end_str;
-    }
-
-    
-
-    /*std::string body_str =
-        "<!DOCTYPE html><html lang = \"ru\">"
-        "<head>"
-        "<meta charset = \"UTF-8\">"
-        "<meta name = \"viewport\" content = \"width=device-width, initial-scale=1.0\">"
-        "<title>Search utility</title>"
-        "</head>"
-        "<body>"
-        "<h4>Your request</h4>"
-        "<form action = \"/\" method = \"POST\">"
-        "<input name = \"search_request\" type = \"text\" placeholder = \"type your search request here - 4 words max\" minlength = \"2\" pattern = \"[- A-zА-я]+\" required>"
-        "<button type = \"submit\">Search</button>"
-        "</form>"
-        "<!--search result below-->"
-        "<h2> Search results: </h2>" 
-        "<p><a href = \"https://example.com\" target = \"blank\"> link1</a></p>"
-        "</body>"
-        "</html>";*/
+        body_str = start_str + "<p>Your search: " + request_string + "</p>\n" + end_str;
+    }    
 
     res.body() = body_str;
 
@@ -265,7 +252,7 @@ fail(beast::error_code ec, char const* what)
     std::cerr << what << ": " << ec.message() << "\n";
 }
 
-std::string open_start_file_search_result(std::string file_path)
+std::string open_start_file_search_result(const std::string& file_path)
 {
     std::cout << "path = " << file_path << "\n";
     std::ifstream res_file(file_path);
@@ -289,7 +276,7 @@ std::string open_start_file_search_result(std::string file_path)
     return file_content;
 }
 
-bool split_str_content(std::string source_str, std::string& start_str, std::string& end_str) //разделить результирующий  файл на 2 части - в середину буду вставлять результаты поиска
+bool split_str_content(const std::string& source_str, std::string& start_str, std::string& end_str) //разделить результирующий  файл на 2 части - в середину буду вставлять результаты поиска
 {        
     std::smatch res;
     if (regex_search(source_str, res, std::regex("<!--search result below-->")))
@@ -299,10 +286,56 @@ bool split_str_content(std::string source_str, std::string& start_str, std::stri
         return true;
      }
     else return false;
+}
 
+std::string clear_request_string(const std::string& source_str) //очистить строку поиска от служебного содержимого
+{
+    std::string field_name = "search_request=";
     
-    
+    if (!source_str.find(field_name) == 0)
+        return "";
 
-    
+    std::string res_string = source_str;
 
+    res_string.erase(0, field_name.size());
+
+    res_string = std::regex_replace(res_string, std::regex("%09"), " "); //убрать знаки табуляции
+    res_string = std::regex_replace(res_string, std::regex("([\.,:;!?\\\"'*+=_~#$^&])"), " "); //убрать знаки препинания и спец символы
+    res_string = std::regex_replace(res_string, std::regex(" {2,}"), " "); //убрать двойные пробелы
+    
+    //все строчные
+    std::transform(res_string.begin(), res_string.end(), res_string.begin(),
+        [](unsigned char c) { return std::tolower(c); });
+
+    return res_string;
+}
+
+std::set<std::string> get_words_request_set(const std::string& source_str)
+{
+    std::string str = source_str; // "1111 2222 3333 4444"; //source_str;
+    std::set<std::string> result_set;
+
+    /*while (!str.empty())
+    {
+
+    }*/
+
+
+    std::istringstream input{ str };
+    std::vector<std::string> result_vector;
+
+    // extract substrings one-by-one
+    while (!input.eof()) {
+        std::string substring;
+        input >> substring;
+        result_vector.push_back(substring);
+    }
+
+    std::cout << "___________get_words_request_set_________" << "\n";
+    // print all the extracted substrings
+    for (const std::string& substring : result_vector) {
+        std::cout << substring << std::endl;
+    }
+
+    return result_set;
 }

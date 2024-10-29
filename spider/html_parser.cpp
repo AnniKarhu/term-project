@@ -69,6 +69,7 @@ std::set<std::string> html_parser::get_urls_from_html(const std::string& html_bo
 
 std::string html_parser::clear_tags(const std::string& html_body_str)
 {
+        
     std::string s2 = html_body_str;
 
     //s2 = test_html_str;
@@ -79,6 +80,8 @@ std::string html_parser::clear_tags(const std::string& html_body_str)
     s2 = std::regex_replace(s2, std::regex("</ "), "</");
     s2 = std::regex_replace(s2, std::regex("< {1,}"), "<");
     s2 = std::regex_replace(s2, std::regex(" {1,}>"), ">");
+
+    //std::cout << "s2" << s2 << "\n";
 
     std::string regex_str;
 
@@ -105,12 +108,20 @@ std::string html_parser::clear_tags(const std::string& html_body_str)
     res_str += " ";
     res_str += s2;    
 
-    res_str = std::regex_replace(res_str, std::regex("([\.,:;!?\\\"'*+=_~#$%^&])"), " "); //убрать знаки препинания и спец символы
+   // res_str = "<h1>Example Domain</h1> * + = || _ -  ~# $ % ^ &  \ < p >\ Thi//s d,om;ain is for /use in illu, strat: / ive exa:m\"ples\" : in doc& 'ume'? ? (nts.You) may use [this  ;  {;domain;} in literature without prior coordination or asking for permission. < / p>";
+   // std::cout << "______res_str1 = " << res_str << "\n\n";
+  
+    res_str = std::regex_replace(res_str, std::regex("[\.,:;!~=%&#\^\|\$\[\\/\?\<>\(\)\{\}\"'\*\+_\-]"), " "); //убрать знаки препинания и спец символы
+     
     res_str = std::regex_replace(res_str, std::regex(" {2,}"), " "); //убрать лишние пробелы
     
+
     //все строчные
     std::transform(res_str.begin(), res_str.end(), res_str.begin(),
         [](unsigned char c) { return std::tolower(c); });
+
+   // std::cout << " res_str = " << res_str << "\n";
+
 
     return res_str;
 }

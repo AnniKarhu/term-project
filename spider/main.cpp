@@ -11,8 +11,12 @@ int main()
 {
 	std::cout << "Hello!\n";
 
+	
 	setlocale(LC_ALL, "rus");
-	/*SetConsoleCP(CP_UTF8);
+	SetConsoleOutputCP(1251);
+
+	/*setlocale(LC_ALL, "rus");
+	SetConsoleCP(CP_UTF8);
 	SetConsoleOutputCP(CP_UTF8);
 	system("chcp 1251");*/
 

@@ -116,6 +116,8 @@ bool Data_base::create_templates() //создать шаблоны для раб
 
 	try
 	{
+		
+		//****************Индексация**********************************
 		//добавление url
 		connection_ptr->prepare("insert_url", "insert into documents (url) values ($1)");
 
@@ -136,7 +138,17 @@ bool Data_base::create_templates() //создать шаблоны для раб
 
 		//изменить значение - количество слов  word_id на странице с url_id		
 		connection_ptr->prepare("update_url_word_num", "update urls_words set quantity = $3 where  url_id = $1 and word_id = $2");		
+
+		//********************Поиск****************************
+		//уникальный список адресов, в которых встречаются искомые слова
+		connection_ptr->prepare("search_urls_by_words", "select distinct url from (select * from urls_words inner join documents on  urls_words.url_id = documents.id) as Table_A inner join words on Table_A.word_id = words.id where $1"); // $1 = word = 'example' or word = 'domain' or word = 'and'
 		
+		//количество строк с урл = заданному, в которых встречаются нужные слова
+		connection_ptr->prepare("count_url_records_by_words", "select count(*) from (select* from urls_words inner join documents on  urls_words.url_id = documents.id) as Table_A inner join words on Table_A.word_id = words.id where ($1) and url = $2"); //$1 = word = 'example' or word = 'domain' or word = 'and'  $2 = https://example.com
+
+		//выборка адресов и количества вхождений нужных слов
+		connection_ptr->prepare("search_urls_quantities", "select quantity, url from (select* from urls_words inner join documents on urls_words.url_id = documents.id) as Table_A inner join words on Table_A.word_id = words.id where ($1)"); //$1 = word = 'example' or word = 'domain' or word = 'for'
+			
 		return true;
 	}
 	
