@@ -29,7 +29,9 @@ std::string open_start_file_search_result(const std::string& file_path); //получ
 bool split_str_content(const std::string& source_str, std::string& start_str, std::string& end_str); //разделить строку на 2 части по делимитеру "<!--search result below-->"
 std::string clear_request_string(const std::string& source_str); //очистить строку поиска от служебного содержимого
 std::set<std::string> get_words_request_set(const std::string& source_str); //создать set из слов запроса
-//std::map<std::string, int>  get_urls_list_by_words(std::set<std::string> words_set, Data_base* data_base); //получить мап адресов, по которым встречаются искамые слова
+bool urls_vector_cmp(std::pair<std::string, int> pair_a, std::pair<std::string, int> pair_b); //сравнение пар урл-значение
+
+
 
 // Return a reasonable mime type based on the extension of a file.
 beast::string_view mime_type(beast::string_view path)
@@ -238,13 +240,31 @@ http::message_generator handle_request(
         }       
     }
 
-    std::cout << "\n\n________________map_urls_list: \n";
-    for (auto url : map_urls_list)
+    std::vector<std::pair<std::string, int>> final_array;
+    for (auto url : words_urls_table)
     {
-       std::cout << url.first << " = " << url.second << "\n";
+        final_array.push_back(std::pair<std::string, int>(url.first, url.second));
     }
 
+    sort(final_array.begin(), final_array.end(), urls_vector_cmp);
+    
+    for (auto url : final_array)
+    {
+        std::cout << url.first << " = " << url.second << "\n";
+    }
+  
+    int results_num = (search_results > final_array.size() ? final_array.size() : search_results); 
 
+    std::string search_result_string;
+    for (int i = 0; i < results_num; ++i)
+    {
+        search_result_string += "<p>" + std::to_string(i+1)+ ". <a href = \"" + final_array[i].first + "\">" + final_array[i].first + "</a></p>\n";
+    }
+
+    if (search_result_string.empty())
+    {
+        search_result_string = "<p>Unfortunately, there are no results for you request. Try one more time.</p>\n";
+    }
 
     http::response<http::string_body> res{ http::status::ok, req.version() };
     res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
@@ -260,7 +280,7 @@ http::message_generator handle_request(
 
     if (split_str_content(body_str, start_str, end_str))
     {
-        body_str = start_str + "<p>Your search: " + request_string + "</p>\n" + end_str;
+        body_str = start_str + "<p>Your search: " + request_string + "</p>\n" + search_result_string + end_str;
     }    
 
     res.body() = body_str;
@@ -363,5 +383,10 @@ std::set<std::string> get_words_request_set(const std::string& source_str)
     }*/
 
     return result_set;
+}
+
+bool urls_vector_cmp(std::pair<std::string, int> pair_a, std::pair<std::string, int> pair_b) //сравнение пар урл-значение
+{
+  return   pair_a.second > pair_b.second ? true : false;
 }
 
