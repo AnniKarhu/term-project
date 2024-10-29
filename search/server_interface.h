@@ -29,6 +29,7 @@ std::string open_start_file_search_result(const std::string& file_path); //получ
 bool split_str_content(const std::string& source_str, std::string& start_str, std::string& end_str); //разделить строку на 2 части по делимитеру "<!--search result below-->"
 std::string clear_request_string(const std::string& source_str); //очистить строку поиска от служебного содержимого
 std::set<std::string> get_words_request_set(const std::string& source_str); //создать set из слов запроса
+//std::map<std::string, int>  get_urls_list_by_words(std::set<std::string> words_set, Data_base* data_base); //получить мап адресов, по которым встречаются искамые слова
 
 // Return a reasonable mime type based on the extension of a file.
 beast::string_view mime_type(beast::string_view path)
@@ -209,8 +210,41 @@ http::message_generator handle_request(
    // request_string = ;
     std::cout << "request_string = " << request_string << "\n\n";
 
-    get_words_request_set(request_string);
-   // почему в request_string плюсики вместо пробелов
+    std::set<std::string> words_set = get_words_request_set(request_string); //получить set слов запроса
+    std::map<std::string, int> map_urls_list = data_base->get_urls_list_by_words(words_set); //получить список адресов, по которым встречаются эти слова
+   
+    const int words_num = words_set.size();
+
+    //по каждому из полученных адресов посчитать, сколько искомых слов у него есть.
+    //если количество слов меньше искомого, такие адреса в дальнейшей выборке не участвуют, их multiplier = 0.
+    //для адресов, где количество слов равно запрашиваемому, multiplier = 1 - это начальное значение счетчика
+    for (auto url : map_urls_list)
+    {
+        int url_words_count = data_base->count_url_words(words_set, url.first);
+        if (words_num == url_words_count)
+        {
+            url.second = 1;
+        }
+        //std::cout << url.first << " = " << url.second << "\n";
+    }
+
+    std::multimap<std::string, int> words_urls_table = data_base->get_words_urls_table(words_set); //получить из базы все записи с адресами и количеством вхождений слов
+    
+    for (auto url : words_urls_table)
+    {
+        if (map_urls_list[url.first]) //если multiplier этого элемента не равен 0
+        {
+            map_urls_list[url.first] = map_urls_list[url.first] + url.second;
+        }       
+    }
+
+    std::cout << "\n\n________________map_urls_list: \n";
+    for (auto url : map_urls_list)
+    {
+       std::cout << url.first << " = " << url.second << "\n";
+    }
+
+
 
     http::response<http::string_body> res{ http::status::ok, req.version() };
     res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
@@ -221,14 +255,11 @@ http::message_generator handle_request(
 
     std::string body_str = open_start_file_search_result(path);
 
-    //std::cout << "body_str = " << body_str;
-    
     std::string start_str;
     std::string end_str;
+
     if (split_str_content(body_str, start_str, end_str))
     {
-        //std::cout << "start_str = \n" << start_str << "\n\n\n";
-        //std::cout << "end_str = \n" << end_str << "\n";
         body_str = start_str + "<p>Your search: " + request_string + "</p>\n" + end_str;
     }    
 
@@ -254,7 +285,7 @@ fail(beast::error_code ec, char const* what)
 
 std::string open_start_file_search_result(const std::string& file_path)
 {
-    std::cout << "path = " << file_path << "\n";
+   // std::cout << "path = " << file_path << "\n";
     std::ifstream res_file(file_path);
     if (!res_file.is_open())
     {
@@ -312,30 +343,25 @@ std::string clear_request_string(const std::string& source_str) //очистить строк
 
 std::set<std::string> get_words_request_set(const std::string& source_str)
 {
-    std::string str = source_str; // "1111 2222 3333 4444"; //source_str;
+    //std::string str = source_str; // "1111 2222 3333 4444"; //source_str;
     std::set<std::string> result_set;
 
-    /*while (!str.empty())
+    std::istringstream in_string { source_str };
+    // std::vector<std::string> result_vector;
+
+    std::string single_word;
+    while (!in_string.eof())
+    {   
+        in_string >> single_word;
+        result_set.insert(single_word); // .push_back();
+    }
+
+    /*std::cout << "___________get_words_request_set_________" << "\n";
+    for (const std::string& el : result_set) 
     {
-
+        std::cout << elg << "\n";
     }*/
-
-
-    std::istringstream input{ str };
-    std::vector<std::string> result_vector;
-
-    // extract substrings one-by-one
-    while (!input.eof()) {
-        std::string substring;
-        input >> substring;
-        result_vector.push_back(substring);
-    }
-
-    std::cout << "___________get_words_request_set_________" << "\n";
-    // print all the extracted substrings
-    for (const std::string& substring : result_vector) {
-        std::cout << substring << std::endl;
-    }
 
     return result_set;
 }
+

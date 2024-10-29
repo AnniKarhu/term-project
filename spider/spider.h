@@ -54,6 +54,8 @@ private:
 	bool start_work = false;
 	
 	std::mutex threads_start_mutex; //мьютекс старта работы потоков
+	std::mutex threads_get_state; //мьютекс запроса состояния
+	std::mutex data_base_mutex; //мьютекс обращения к базе данных
 	std::condition_variable start_threads;
 
 	void start_work_threads(); //создать и запустить рабочие потоки
@@ -63,7 +65,7 @@ private:
 	bool process_next_task(const int& thread_index); 
 	bool work_function(const url_item& new_url_item, std::set<std::string>& new_urls_set, std::map<std::string, unsigned  int>& new_words_map);
 
-	bool add_url_words_to_database(const std::string& url_str, const std::map<std::string, unsigned  int>& words_map);
+	void add_url_words_to_database(const std::string& url_str, const std::map<std::string, unsigned  int>& words_map);
 	
 
 

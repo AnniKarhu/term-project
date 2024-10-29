@@ -140,7 +140,7 @@ int main()
 //	inner join
 //	words on Table_A.word_id = words.id where(word = 'example' or word = 'domain' or word = 'for');
 //
-//такая запись хранить урлы и количество вхождений слов - урлы только те, в которых встречаются все слова
+//такая запись хранит урлы и количество вхождений слов - урлы только те, в которых встречаются все слова
 //select quantity, url from
 //(select* from urls_words
 //	inner  join

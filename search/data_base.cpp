@@ -106,58 +106,6 @@ bool Data_base::create_tables() //создать необходимые табл
 	}	
 }
 
-bool Data_base::create_templates() //создать шаблоны для работы
-{
-	if ((connection_ptr == nullptr) || (!(connection_ptr->is_open())))
-	{
-		last_error = "Error creating query templates - no connection to database.";
-		return false;
-	}
-
-	try
-	{
-		
-		//****************Индексация**********************************
-		//добавление url
-		connection_ptr->prepare("insert_url", "insert into documents (url) values ($1)");
-
-		//добавление слова
-		connection_ptr->prepare("insert_word", "insert into words (word) values ($1)");
-
-		//получить id url страницы
-		connection_ptr->prepare("search_url_id", "select id from documents where url = $1");
-
-		//получить id слова
-		connection_ptr->prepare("search_word_id", "select id from words where word = $1");
-
-		//получить num - количество слов с word_id на странице с url_id
-		connection_ptr->prepare("search_url_word_num", "select quantity from urls_words where url_id = $1 and word_id = $2");
-
-		//добавить новое значение - количество слов  word_id на странице с url_id
-		connection_ptr->prepare("add_url_word_num", "insert into urls_words(url_id, word_id, quantity) values($1, $2, $3)");
-
-		//изменить значение - количество слов  word_id на странице с url_id		
-		connection_ptr->prepare("update_url_word_num", "update urls_words set quantity = $3 where  url_id = $1 and word_id = $2");		
-
-		//********************Поиск****************************
-		//уникальный список адресов, в которых встречаются искомые слова
-		connection_ptr->prepare("search_urls_by_words", "select distinct url from (select * from urls_words inner join documents on  urls_words.url_id = documents.id) as Table_A inner join words on Table_A.word_id = words.id where $1"); // $1 = word = 'example' or word = 'domain' or word = 'and'
-		
-		//количество строк с урл = заданному, в которых встречаются нужные слова
-		connection_ptr->prepare("count_url_records_by_words", "select count(*) from (select* from urls_words inner join documents on  urls_words.url_id = documents.id) as Table_A inner join words on Table_A.word_id = words.id where ($1) and url = $2"); //$1 = word = 'example' or word = 'domain' or word = 'and'  $2 = https://example.com
-
-		//выборка адресов и количества вхождений нужных слов
-		connection_ptr->prepare("search_urls_quantities", "select quantity, url from (select* from urls_words inner join documents on urls_words.url_id = documents.id) as Table_A inner join words on Table_A.word_id = words.id where ($1)"); //$1 = word = 'example' or word = 'domain' or word = 'for'
-			
-		return true;
-	}
-	
-	catch (...)
-	{
-		last_error = "Error creating query templates";
-		return false;
-	}
-}
 
 //начало работы с базой данных
 bool Data_base::start_db()
@@ -166,184 +114,149 @@ bool Data_base::start_db()
 
 	if (connect_db()) //подключиться к базе
 	{
-		result = create_tables() and //создать необходимые таблицы
-				 create_templates(); //создать шаблоны для работы; 
+		result = create_tables();  //создать необходимые таблицы				 
 	}
 		
 	return result;
 }
 
-bool Data_base::test_insert() //убрать после отладки
+//получить мап адресов, по которым встречаются искомые слова
+std::map<std::string, int>  Data_base::get_urls_list_by_words(const std::set<std::string>& words_set)
 {
+	std::map<std::string, int> result_map;
+	if (words_set.empty()) {	return result_map;	}
+
 	if (connection_ptr == nullptr)
 	{
 		last_error = "No database connection";
-		return false; 
+		return result_map;
 	}
+
+	last_error = "";   	
 
 	try
 	{
-		if  (!(connection_ptr->is_open()))
-		{
-			return false; 
-		}
-
 		pqxx::work tx{ *connection_ptr };
 
-		//добавление в таблицу пользователей
-		tx.exec(
-			"insert into documents (url) values "
-			"('http://google.com/'), "
-			"('http://google2.com/'), "
-			"('http://google3.com/'); ");		
+		std::string where_str = prepare_words_where_or(words_set, tx); //составить строку where из слов запроса//$1 = word = 'example' or word = 'domain' or word = 'and'
+		
+		std::string request_str = "select distinct url from "
+								  "(select * from urls_words inner join documents on  urls_words.url_id = documents.id) as Table_A "
+								  "inner join words on Table_A.word_id = words.id where " + where_str;		
 
-		tx.commit();		
+		auto query_res = tx.exec(request_str);
+		
+		for (auto row : query_res)
+		{
+			result_map[row["url"].as<std::string>()] = -1;			
+		}
+
 	}
 	catch (const std::exception& ex)
 	{
 		last_error = ex.what();
-		return false;
-	}
-	catch (...)
-	{
-		last_error = "Error adding data";
-		return false;
+		return result_map;
 	}
 
-	return true;
+	return result_map;
 }
 
-/*взаимодействие с базой данных*/
-bool Data_base::add_new_str(const std::string& str, std::string tmpl)
+int Data_base::count_url_words(const std::set<std::string>& words_set, std::string url)
 {
+	if (words_set.empty()) 	{	return 0; }
+
 	if (connection_ptr == nullptr)
 	{
 		last_error = "No database connection";
-		return false;
+		return 0;
 	}
 
-	last_error = "";
-	try
-	{
-		pqxx::work tx{ *connection_ptr };
-		tx.exec_prepared(tmpl, str);
-		tx.commit();
-
-		return true;
-	}
-	catch (const std::exception& ex)
-	{
-		last_error = ex.what();
-		return false;
-	}
-}
-
-bool Data_base::add_new_url(const std::string& url_str) //добавить новый урл
-{
-	return add_new_str(url_str, "insert_url");
-}
-
-bool Data_base::add_new_word(const std::string& word_str) //добавить новое слово
-{
-	return add_new_str(word_str, "insert_word");
-}
-
-
-int Data_base::get_url_id(const std::string& url_str) //узнать id url
-{
-	return get_str_id(url_str, "search_url_id");
-}
-
-int Data_base::get_word_id(const std::string& word_str) //узнать id слова
-{
-	return get_str_id(word_str, "search_word_id");
-}
-
-int Data_base::get_str_id(const std::string& str, std::string tmpl)
-{
-	if (connection_ptr == nullptr)
-	{
-		last_error = "No database connection";
-		return -1;
-	}
-
-	last_error = "";
+	last_error = "";	  	
 
 	try
 	{
 		pqxx::work tx{ *connection_ptr };
 
-		auto query_res = tx.exec_prepared(tmpl, str);
-		if (query_res.empty())
-		{
-			return -1;
-		}
+		std::string where_str = prepare_words_where_or(words_set, tx); //составить строку where из слов запроса //$1 = word = 'example' or word = 'domain' or word = 'and'
+		
+		std::string request_str = "select count(*) from (select* from urls_words "
+								  "inner join documents on  urls_words.url_id = documents.id) as Table_A "
+								  "inner join words on Table_A.word_id = words.id "
+								  "where (" + where_str +") and url = '" + url +"'";
 
+		auto query_res = tx.exec(request_str);
+		
 		auto row = query_res.begin();
-		int res_int = row["id"].as<int>();
+		int res_int = row["count"].as<int>();
 		return res_int; //вернуть первый (он же должен быть и единственным) результат
 	}
 	catch (const std::exception& ex)
 	{
 		last_error = ex.what();
-		return -1;
+		return 0;
 	}
 }
 
-bool  Data_base::get_word_url_exist(int url_id, int word_id) //существует ли запись с такими id страницы и слова
+std::string Data_base::prepare_words_where_or(const std::set<std::string>& words_set, pqxx::work& tx) //подготовить выражение where or из запрашиваемых слов
 {
-	if (connection_ptr == nullptr)
+	std::string where_str;  //$1 = word = 'example' or word = 'domain' or word = 'and'
+	for (const std::string& word : words_set) //составить строку where из слов запроса
 	{
-		last_error = "No database connection";
-		return false;
+		where_str += "word = '" + tx.esc(word) + "' or ";
 	}
+	//удалить or после последнего слова
+	where_str.erase((where_str.size() - 4), 4); //" or " - 4 символа
 
-	last_error = "";
-	pqxx::work tx{ *connection_ptr };
-
-	auto query_res = tx.exec_prepared("search_url_word_num", url_id, word_id);
-
-	if (query_res.empty()) //пустой результат		
-	{
-		return false;
-	}
-	else
-		return true;
+	return where_str;
 }
 
-bool Data_base::new_word_url_pair(int url_id, int word_id, int num, std::string tmpl)
+std::multimap<std::string, int> Data_base::get_words_urls_table(const std::set<std::string>& words_set) //получить из базы все записи с адресами и количеством вхождений слов
 {
+	std::multimap<std::string, int> result_map;
+
+	if (words_set.empty()) { return result_map; }
+
 	if (connection_ptr == nullptr)
 	{
 		last_error = "No database connection";
-		return false;
+		return result_map;
 	}
 
 	last_error = "";
-	
+
 	try
 	{
 		pqxx::work tx{ *connection_ptr };
-		tx.exec_prepared(tmpl, url_id, word_id, num);
-		tx.commit();
 
-		return true;
+		std::string where_str = prepare_words_where_or(words_set, tx); //составить строку where из слов запроса//$1 = word = 'example' or word = 'domain' or word = 'and'
+
+		std::string request_str = "select quantity, url from (select * from urls_words "			
+								  "inner  join documents on  urls_words.url_id = documents.id) as Table_A "
+								  "inner join words on Table_A.word_id = words.id where " + where_str;
+
+		//std::cout << "request_str = " << request_str << "\n";
+
+		auto query_res = tx.exec(request_str);
+
+		std::pair<std::string, int> map_pair;
+
+		for (auto row : query_res)
+		{
+			map_pair.first = row["url"].as<std::string>();
+			map_pair.second = row["quantity"].as<int>();
+			
+			result_map.insert(map_pair);			
+		}
+
 	}
 	catch (const std::exception& ex)
 	{
 		last_error = ex.what();
-		return false;
-	}	
-}
+		std::cout << "last error = " << ex.what() << "\n";
+		return result_map;
+	}
 
-bool Data_base::add_new_word_url_pair(int url_id, int word_id, int num) //добавить новое значение - количество слов на странице
-{
-	return new_word_url_pair(url_id, word_id, num, "add_url_word_num");
+	
+	return result_map;
 }
-
-bool Data_base::update_word_url_pair(int url_id, int word_id, int num) //изменить количество слов на странице
-{
-	return new_word_url_pair(url_id, word_id, num, "update_url_word_num");
-}
-
 

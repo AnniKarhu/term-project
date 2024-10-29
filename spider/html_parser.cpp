@@ -105,24 +105,49 @@ std::string html_parser::clear_tags(const std::string& html_body_str)
         s2 = std::regex_replace(s2, std::regex(regex_str), "");
      };
 
+    //std::cout << " s2 = \n" << s2 << "\n";
+
+   // std::string substr = "\\u003"
+   // std::regex rx()
+
+
+    regex_str = ("(u003c)");//спецсимволы
+    s2 = std::regex_replace(s2, std::regex(regex_str), " ");
+    regex_str = ("(u003e)");//спецсимволы
+    s2 = std::regex_replace(s2, std::regex(regex_str), " ");
+   
+
+
     res_str += " ";
     res_str += s2;    
 
    // res_str = "<h1>Example Domain</h1> * + = || _ -  ~# $ % ^ &  \ < p >\ Thi//s d,om;ain is for /use in illu, strat: / ive exa:m\"ples\" : in doc& 'ume'? ? (nts.You) may use [this  ;  {;domain;} in literature without prior coordination or asking for permission. < / p>";
    // std::cout << "______res_str1 = " << res_str << "\n\n";
   
-    res_str = std::regex_replace(res_str, std::regex("[\.,:;!~=%&#\^\|\$\[\\/\?\<>\(\)\{\}\"'\*\+_\-]"), " "); //убрать знаки препинания и спец символы
-     
-    res_str = std::regex_replace(res_str, std::regex(" {2,}"), " "); //убрать лишние пробелы
+    //не удается экранировать символы ] и \ - их добавление в рег. выражение вызывает падение программы, хотя в тестах на сторонних сайтах выражения считаются валидными
+    // res_str = std::regex_replace(res_str, std::regex("[\.,:;!~=%&#\^\|\$\[\]\\/\?\<>\(\)\{\}\"'\*\+_\-]"), " "); //убрать знаки препинания и спец символы
     
+    res_str = std::regex_replace(res_str, std::regex("[\.,:;@!~=%&#\^\|\$\[\\/\?\<>\(\)\{\}\"'\*\+_\-]"), " "); //убрать знаки препинания и спец символы
+    res_str = std::regex_replace(res_str, std::regex(" {2,}"), " "); //убрать лишние пробелы    
+    
+    //функцией regex_replace не получается удалить знаки \ и ], поэтому их удаляю отдельно
+    int pos;
+    while (!((pos = res_str.find("\\")) == std::string::npos))
+    {
+        res_str.erase(pos, 1);
+    }
+    
+    while (!((pos = res_str.find("]")) == std::string::npos))
+    {
+        res_str.erase(pos, 1);
+    }
+
 
     //все строчные
     std::transform(res_str.begin(), res_str.end(), res_str.begin(),
         [](unsigned char c) { return std::tolower(c); });
 
    // std::cout << " res_str = " << res_str << "\n";
-
-
     return res_str;
 }
 

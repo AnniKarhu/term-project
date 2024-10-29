@@ -42,9 +42,11 @@ void Spider::work(const int& thread_index)
 		{
 			if (process_next_task(thread_index)) 
 			{
-				lk.lock();					
+				
+				std::unique_lock lk_state(threads_get_state); //std::mutex threads_get_state; //мьютекс запроса состояния			
+								
 					std::cout << get_queue_state();					
-				lk.unlock();
+				lk_state.unlock();
 				std::cout << get_threads_state();
 			}			
 		}		
@@ -179,6 +181,7 @@ bool Spider::work_function(const url_item& new_url_item, std::set<std::string> &
 			}
 			
 			std::string text_str = my_html_parser.clear_tags(html_request->get_html_body_str());
+			//std::cout << "\n\n________text_str = \n" << text_str << "\n";
 			new_words_map.clear();
 			new_words_map = my_html_parser.collect_words(text_str);
 			break;
@@ -242,13 +245,17 @@ void Spider::print_urls_list()
 	}
 }
 
-bool Spider::add_url_words_to_database(const std::string& url_str, const std::map<std::string, unsigned  int>& words_map)
+void Spider::add_url_words_to_database(const std::string& url_str, const std::map<std::string, unsigned  int>& words_map)
 {
-	data_base->add_new_url(url_str);	
+	
+	std::unique_lock lk_db(data_base_mutex); //std::mutex data_base_mutex; //мьютекс обращения к базе данных	
+
+	data_base->add_new_url(url_str);
+	
 	int url_id = data_base->get_url_id(url_str);
 	if (url_id < 0)
 	{
-		return false;	
+		return;
 	}
 
 	for (auto& el : words_map)
@@ -257,21 +264,18 @@ bool Spider::add_url_words_to_database(const std::string& url_str, const std::ma
 		int word_id = data_base->get_word_id(el.first);
 		if (word_id < 0)
 		{
-			return false;
+			continue;
 		}
-
+		
 		if (data_base->get_word_url_exist(url_id, word_id))//узнать, существует ли запись с id слова и урла
 		{
-			 data_base->update_word_url_pair(url_id, word_id, el.second); //	существует - запрос на изменение
+			data_base->update_word_url_pair(url_id, word_id, el.second); //	существует - запрос на изменение
 		}
 		else
 		{
 			data_base->add_new_word_url_pair(url_id, word_id, el.second); //	если не существует - запрос на вставку
-		}	
-		
-	}
-
-	return true;
+		}
+	}		
 }
 
 
