@@ -3,7 +3,9 @@
 
 //#include "Windows.h"
 #include "ini_parser.h"
+#include "data_base.h"
 #include "server.cpp"
+#include "data_base.h"
 
 const std::string ini_file_name = "search_server.ini";
 const std::string search_not_ready_str = "Search server is not ready to work.";
@@ -17,7 +19,6 @@ int main()
     std::string address_str;
     std::string port_str;
 	std::string db_connection_string;
-
 	int search_results;
 
 	try
@@ -53,6 +54,14 @@ int main()
 		return 0;
 	}
 
+	Data_base data_base(db_connection_string);
+	if (!data_base.start_db())
+	{
+		std::cout << "Database not started. Further work is impossible. \n";
+
+		data_base.print_last_error(); //вывести информацию о последней ошибке		
+		return 0;
+	}
     
     auto const address = net::ip::make_address(address_str);
     auto const port = static_cast<unsigned short>(std::stoi(port_str));
@@ -67,18 +76,15 @@ int main()
     std::make_shared<listener>(
         ioc,
         tcp::endpoint{ address, port },
-        doc_root)->run();
+        doc_root,
+		search_results,
+		&data_base)->run();
 
-	1) попробовать параметры базы данных и количетсов результатов на странице передавать через listener->run(db_connection_str, res_num)
-    2) через run листенера добраться до session (метод on_accept)
-	3) session->run - сюда нужно передать параметры базы данных и количество результатов поиска
-	4) вопрос - где подключаться к базе данных - в листенер или в session?
-		вероятно, коннект можно делать в session при обработке запроса get
-
-		или всегда держать базу открытой, а в листенер и сессион передавать только указатель на открытую базу данных
+	/*		или всегда держать базу открытой, а в листенер и сессион передавать только указатель на открытую базу данных
 	5) не забыть предусмотреть закрытие базы данных и delete указателя
-	6) или базу данных открыть в main, статически без динамического выделения памяти? а в листенер и сессион передавать по ссылке?
-
+	6) или базу данных открыть в main без динамического выделения памяти? а в листенер и сессион передавать по ссылке?
+	7) libpqx вынести отдельно, чтобы не иметь две папки
+	8) модуль с базой данных и парсер ini вынести и оформит в dll, чтобы не править код в двух местах*/
 
     // Run the I/O service on the requested number of threads
     std::vector<std::thread> v;
@@ -93,3 +99,51 @@ int main()
 
     return EXIT_SUCCESS;
 }
+
+запрос из БД
+
+
+
+1. такая выборка включает только список адресов (уникальных), в которых встречаются искомые слова
+select distinct url from(select* from urls_words
+	inner  join  documents on  urls_words.url_id = documents.id) where word_id = 1 or word_id = 5 or word_id = 6;
+этот список сохранить в виде std::map map_urls_list <string, int> string - url, int multiplier = 0
+
+
+2. такая выборка содержит число - количество строк с урл = заданному
+select count(*) from(select * from(select * from urls_words
+	inner  join  documents on  urls_words.url_id = documents.id) where word_id = 1 or word_id = 5 or word_id = 6) where url = 'https://example.com/';
+
+если это число = числу слов в запросе пользователя, установить multiplier = 1 для записи этого урла в std::map map_urls_list 
+
+3.
+такая выборка включает все поля и все строки	
+select* from(select* from urls_words
+	inner  join  documents on  urls_words.url_id = documents.id) where word_id = 1 or word_id = 5 or word_id = 6;
+
+создать новый результирующий std::map map_result
+
+перебрать все записи из этого результата:
+3.1 найти запись в std::map map_urls_list с соответсвующим url. Если его multiplier =0, перейти к следующей записи
+3.2 найти запись в std::map map_result с соответсвующим url и сохранить из него значение количества слов count.
+3.3. к количеству слов добавить значение quantity из выборки
+3.4. сохранить новое значение count для этого урл в map_result
+
+4. результат после обработки всех записей - std::map map_result
+5. std::map map_result нужно переписать в вектор tuple<string url, int count>
+6. отсортировать новый вектор по значению count
+сортировка вектора компаратором https ://ejudge.179.ru/tasks/cpp/total/242.html
+
+Пример реализации такой функции для сортировки значений по последней цифре :
+vector a 
+bool cmp(int a, int b) вместо a и b будут tuple<string, int>
+{
+	return a % 10 < b % 10; сравнивать буду int из туплов
+}
+
+Эта функция передается в функцию sort третьим параметром :
+
+sort(a.begin(), a.end(), cmp);
+
+
+
