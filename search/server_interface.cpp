@@ -112,7 +112,7 @@ std::string open_start_file_search_result(const std::string& file_path)
     return file_content;
 }
 
-bool split_str_content(const std::string& source_str, std::string& start_str, std::string& end_str) //разделить результирующий  файл на 2 части - в середину буду вставлять результаты поиска
+bool split_str_content(const std::string& source_str, std::string& start_str, std::string& end_str) //                                  2       -                                            
 {
     std::smatch res;
     if (regex_search(source_str, res, std::regex("<!--search result below-->")))
@@ -124,7 +124,7 @@ bool split_str_content(const std::string& source_str, std::string& start_str, st
     else return false;
 }
 
-std::string clear_request_string(const std::string& source_str) //очистить строку поиска от служебного содержимого
+std::string clear_request_string(const std::string& source_str) //                                                
 {
     std::string field_name = "search_request=";
 
@@ -135,11 +135,11 @@ std::string clear_request_string(const std::string& source_str) //очистить строк
 
     res_string.erase(0, field_name.size());
 
-    res_string = std::regex_replace(res_string, std::regex("%09"), " "); //убрать знаки табуляции
-    res_string = std::regex_replace(res_string, std::regex("([\.,:;!?\\\"'*+=_~#$^&])"), " "); //убрать знаки препинания и спец символы
-    res_string = std::regex_replace(res_string, std::regex(" {2,}"), " "); //убрать двойные пробелы
+    res_string = std::regex_replace(res_string, std::regex("%09"), " "); //                      
+    res_string = std::regex_replace(res_string, std::regex("([\.,:;!?\\\"'*+=_~#$^&])"), " "); //                                      
+    res_string = std::regex_replace(res_string, std::regex(" {2,}"), " "); //                      
 
-    //все строчные
+    //            
     std::transform(res_string.begin(), res_string.end(), res_string.begin(),
         [](unsigned char c) { return std::tolower(c); });
 
@@ -161,27 +161,27 @@ std::set<std::string> get_words_request_set(const std::string& source_str)
     return result_set;
 }
 
-bool urls_vector_cmp(std::pair<std::string, int> pair_a, std::pair<std::string, int> pair_b) //сравнение пар урл-значение
+bool urls_vector_cmp(std::pair<std::string, int> pair_a, std::pair<std::string, int> pair_b) //                 -        
 {
     return   pair_a.second > pair_b.second ? true : false;    
 }
 
 
-std::string get_post_request_result_string(const std::string& request_string, Data_base* data_base, int search_results) //получить строку с результатами поиска по словам
+std::string get_post_request_result_string(const std::string& request_string, Data_base* data_base, int search_results) //                                               
 {
-    std::set<std::string> words_set; //набор слов в запросе
-    std::map<std::string, int> map_urls_list; //список адресов, в которых встречаются слова
-    std::multimap<std::string, int> words_urls_table; //все записи из БД с адресами и количеством вхождений слов
-    std::vector<std::pair<std::string, int>> final_array; //результирующий массив адресов
+    std::set<std::string> words_set; //                    
+    std::map<std::string, int> map_urls_list; //              ,                            
+    std::multimap<std::string, int> words_urls_table; //                                                        
+    std::vector<std::pair<std::string, int>> final_array; //                             
 
-    words_set = get_words_request_set(request_string); //получить set слов запроса
-    const int words_num = words_set.size(); //сколько слов в запросе
+    words_set = get_words_request_set(request_string); //         set             
+    const int words_num = words_set.size(); //                      
 
-    map_urls_list = data_base->get_urls_list_by_words(words_set); //получить список адресов, по которым встречаются эти слова
+    map_urls_list = data_base->get_urls_list_by_words(words_set); //                       ,                                 
 
-    //по каждому из полученных адресов посчитать, сколько искомых слов у него есть.
-    //если количество слов меньше искомого, такие адреса в дальнейшей выборке не участвуют, их multiplier = 0.
-    //для адресов, где количество слов равно запрашиваемому, multiplier = 1 - это начальное значение счетчика
+    //                                          ,                                 .
+    //                                    ,                                               ,    multiplier = 0.
+    //           ,                                         , multiplier = 1 -                                
     for (auto url : map_urls_list)
     {
         int url_words_count = data_base->count_url_words(words_set, url.first);
@@ -191,11 +191,11 @@ std::string get_post_request_result_string(const std::string& request_string, Da
         }
     }
 
-    words_urls_table = data_base->get_words_urls_table(words_set); //получить из базы все записи с адресами и количеством вхождений слов
+    words_urls_table = data_base->get_words_urls_table(words_set); //                                                                   
 
     for (auto url : words_urls_table)
     {
-        if (map_urls_list[url.first]) //если multiplier этого элемента не равен 0
+        if (map_urls_list[url.first]) //     multiplier                         0
         {
             map_urls_list[url.first] = map_urls_list[url.first] + url.second;
         }

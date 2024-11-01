@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 
 set (CMAKE_CXX_STANDARD 20)
 
-set (BOOST_ROOT "D:/Netology/Libs/boost/boost_1_86_0/boost_1_86_0") # Путь к библиотеке Boost
+set (BOOST_ROOT "D:/Netology/Libs/boost/boost_1_86_0/boost_1_86_0") # РџСѓС‚СЊ Рє Р±РёР±Р»РёРѕС‚РµРєРµ Boost
 set (Boost_NO_SYSTEM_PATHS ON)
 set (Boost_USE_MULTITHREADED ON)
 set (Boost_USE_STATIC_LIBS ON)

@@ -1,4 +1,4 @@
-//libs / beast / example / http / client / async / http_client_async.cpp
+п»ї//libs / beast / example / http / client / async / http_client_async.cpp
 //
 // Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
@@ -23,7 +23,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
-#include <future>  // Добавляем для std::promise и std::future
+#include <future>  // Р”РѕР±Р°РІР»СЏРµРј РґР»СЏ std::promise Рё std::future
 
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
@@ -41,7 +41,7 @@ class session : public std::enable_shared_from_this<session>
     beast::flat_buffer buffer_; // (Must persist between reads)
     http::request<http::empty_body> req_;
     http::response<http::string_body> res_;
-    std::promise<std::tuple<int, std::string, std::string>>& promise_;  // Добавляем std::promise для результата
+    std::promise<std::tuple<int, std::string, std::string>>& promise_;  // Р”РѕР±Р°РІР»СЏРµРј std::promise РґР»СЏ СЂРµР·СѓР»СЊС‚Р°С‚Р°
 
 private:
     std::string const port = "80";
@@ -53,7 +53,7 @@ public:
     explicit session(net::io_context& ioc, std::promise<std::tuple<int, std::string, std::string>>& promise):
                                                                                 resolver_(net::make_strand(ioc)),
                                                                                 stream_(net::make_strand(ioc)),
-                                                                                promise_(promise)  // Инициализируем promise
+                                                                                promise_(promise)  // РРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј promise
     {
     }
 
