@@ -1,7 +1,8 @@
 ﻿#include <regex>
 
 #include "Spider.h"
-#include "https_req.h" 
+#include "http_client_async_ssl.cpp"
+#include "http_client_async.cpp"
 
 Spider::Spider(Search_parameters spider_data)
 {		
@@ -41,10 +42,8 @@ void Spider::work(const int& thread_index)
 		while (!task_generator_finished(thread_index))
 		{
 			if (process_next_task(thread_index)) 
-			{
-				
-				std::unique_lock lk_state(threads_get_state); //std::mutex threads_get_state; //мьютекс запроса состояния			
-								
+			{				
+				std::unique_lock lk_state(threads_get_state); //std::mutex threads_get_state; //мьютекс запроса состояния										
 					std::cout << get_queue_state();					
 				lk_state.unlock();
 				std::cout << get_threads_state();
@@ -143,72 +142,158 @@ std::atomic<bool> Spider::task_generator_finished(const int thread_num)
 		return true;
 }
 
-bool Spider::work_function(const url_item& new_url_item, std::set<std::string> &new_urls_set,  std::map<std::string, unsigned int>& new_words_map)
+bool Spider::work_function(const url_item& new_url_item, std::set<std::string>& new_urls_set, std::map<std::string, unsigned int>& new_words_map)
 {
-		
-	http_req* html_request = new http_req(new_url_item.url);
+	if (url_is_forbidden(new_url_item.url)) return false;  //не входит ли хост в список запрещенных для индексирования
+	
+	std::string url_address = new_url_item.url;
 
-	if (!html_request->check_url())
+	//по какому протоколу скачивать страницу
+	host_type url_host_type = get_host_type(url_address);
+	if (url_host_type == host_type::host_unknown) return false;
+	
+	//получить host и target
+	std::string host;
+	std::string target;
+	get_host_and_target(url_address, host, target);
+
+	std::string out_str = "host = " + host + "\n";
+	std::cout << out_str;
+	out_str = "target = " + target + "\n";
+	std::cout << out_str;
+
+	
+	net::io_context ioc; // The io_context is required for all I/O
+	std::promise<std::tuple<int, std::string, std::string>> promise;
+	std::future<std::tuple<int, std::string, std::string>> future = promise.get_future();
+
+	if (url_host_type == host_type::host_http) // http
 	{
-		delete html_request;
-		html_request = new https_req(new_url_item.url);
-		if (!html_request->check_url())
+		std::make_shared<session>(ioc, promise)->run(host.c_str(), target.c_str());
+	}
+	else if (url_host_type == host_type::host_https) // https
+	{
+		// The SSL context is required, and holds certificates
+		ssl::context ctx{ ssl::context::tlsv12_client };
+
+		// This holds the root certificate used for verification
+		load_root_certificates(ctx);
+
+		// Verify the remote server's certificate
+		ctx.set_verify_mode(ssl::verify_peer);
+
+		// Launch the asynchronous operation
+		// The session is constructed with a strand to
+		// ensure that handlers do not execute concurrently.
+		std::make_shared<session_ssl>(net::make_strand(ioc), ctx, promise)->run(host.c_str(), target.c_str());
+	}
+	else
+	{
+		return false; 
+	}
+		
+	ioc.run();
+	std::tuple<int, std::string, std::string> result = future.get();
+
+	request_result url_request_result = static_cast<request_result>(std::get<0>(result));
+	std::string url_body = std::get<1>(result);
+	std::string redirection_url = std::get<2>(result);
+
+	switch (url_request_result)
+	{
+	case request_result::req_res_ok:
+	{
+		if (new_url_item.url_depth <= (max_depth - 1))
 		{
-			std::string out_str = "bad url: " + new_url_item.url + " - mark it as invalid\n";
-			std::cout << out_str;
-			delete html_request;
-			return false;
+			//проверить - не совпадает ли это с host
+			std::string base_host = my_html_parser.get_base_host(new_url_item.url);
+			new_urls_set.clear();
+			new_urls_set = my_html_parser.get_urls_from_html(url_body, base_host, this_host_only, new_url_item.url);
+
+			if (new_urls_set.size() == 0)
+			{
+				std::string out_str = "no links got from page " + new_url_item.url + "\n";
+				std::cout << out_str;
+			}
 		}
+
+		std::string text_str = my_html_parser.clear_tags(url_body);
+		new_words_map.clear();
+		new_words_map = my_html_parser.collect_words(text_str);
+		break;
+	}
+	case request_result::req_res_redirect:
+	{
+		new_urls_set.insert(redirection_url);
+		break;
+	}
+	default: 	return false;	
 	}
 
-	if (html_request->get_page())
-	{
-		switch (html_request->get_request_result())
-		{
-		case request_result::req_res_ok:
-		{
-			if (new_url_item.url_depth <= (max_depth - 1))
-			{
-				std::string base_host = my_html_parser.get_base_host(new_url_item.url);
-				new_urls_set.clear();
-				new_urls_set = my_html_parser.get_urls_from_html(html_request->get_html_body_str(), base_host, this_host_only, new_url_item.url);
-				
-				if (new_urls_set.size() == 0)
-				{
-					std::string out_str = "no links got from page " + new_url_item.url + "\n";
-					std::cout << out_str;
-				}				
-			}
-			
-			std::string text_str = my_html_parser.clear_tags(html_request->get_html_body_str());
-			//std::cout << "\n\n________text_str = \n" << text_str << "\n";
-			new_words_map.clear();
-			new_words_map = my_html_parser.collect_words(text_str);
-			break;
-		}
-		case request_result::req_res_redirect:
-		{
-			std::string redirection_url = html_request->get_redirected_location();
-			new_urls_set.insert(redirection_url); 
-			
-			break;
-		}
-
-		default: {
-					delete html_request;
-					return false; 		
-				}
-		}
-	};
-	
-	delete html_request;
 	return true;
+
 }
+
+//получить host и target
+void Spider::get_host_and_target(std::string& new_url, std::string& host, std::string& target) 
+{
+	int pos;
+	while (!(pos = new_url.find("/")))//удалить лишние слеши из начала хоста (например, из таких запросов http::////example.com) 
+	{
+		new_url.erase(0, 1);
+	}
+
+	pos = new_url.find("/");
+
+	if (pos == std::string::npos)
+	{
+		host = new_url;
+		target = "/";
+	}
+	else
+	{
+		target = new_url.substr(pos);
+		host = new_url.erase(pos, target.length());
+	}	
+}
+
+//определить, по какому протоколу скачивать страницу 
+Spider::host_type Spider::get_host_type(std::string& new_url)
+{	
+	size_t pos = new_url.find("http://");
+	if (pos == 0)
+	{
+		new_url.erase(0, std::string("http://").size()); 
+		return host_type::host_http;
+	}
+
+	pos = new_url.find("https://");
+	if (pos == 0)
+	{
+		new_url.erase(0, std::string("https://").size());
+		return host_type::host_https;
+	}
+
+	return host_type::host_unknown;
+}
+
+//не входит ли хост в список запрещенных для индексирования
+bool Spider::url_is_forbidden(const std::string& check_host) 
+{
+	for (auto& el : forbidden_urls)
+	{
+		if (check_host.find(el) != std::string::npos)
+			return true;
+	}
+
+	return false;
+}
+
 
 std::string Spider::get_queue_state()
 {
 	std::string res_str = "\n________Indexing state:\n";
-	res_str += "urls in queue to be processed: " + std::to_string(pool_queue.get_queue_size()) + "\n"; //    urls_queue.size()) + "\n";
+	res_str += "urls in queue to be processed: " + std::to_string(pool_queue.get_queue_size()) + "\n"; 
 	res_str += "urls already have been processed: " + std::to_string(total_pages_processed) + "\n";
 	res_str += "total urls in list: " + std::to_string(pool_queue.list_of_urls.size()) + "\n";
 	res_str += "\n\n";
@@ -250,6 +335,8 @@ void Spider::add_url_words_to_database(const std::string& url_str, const std::ma
 	
 	std::unique_lock lk_db(data_base_mutex); //std::mutex data_base_mutex; //мьютекс обращения к базе данных	
 
+	if (words_map.size() == 0) return;
+
 	data_base->add_new_url(url_str);
 	
 	int url_id = data_base->get_url_id(url_str);
@@ -277,6 +364,9 @@ void Spider::add_url_words_to_database(const std::string& url_str, const std::ma
 		}
 	}		
 }
+
+
+
 
 
 

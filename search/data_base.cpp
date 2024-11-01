@@ -2,8 +2,6 @@
 #include <algorithm>
 #include <tuple>
 
-//#include "Windows.h"
-
 #include "data_base.h"
 
 
@@ -255,7 +253,6 @@ std::multimap<std::string, int> Data_base::get_words_urls_table(const std::set<s
 		std::cout << "last error = " << ex.what() << "\n";
 		return result_map;
 	}
-
 	
 	return result_map;
 }

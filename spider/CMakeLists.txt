@@ -16,8 +16,9 @@ set(SOURCE_FILES "main.cpp"
 				 "spider.h" "spider.cpp"
 				 "ini_parser.h" "ini_parser.cpp" "parser_exceptions.h"
 				 "data_base.h" "data_base.cpp" 
-				 "http_req.h" "http_req.cpp"
-				 "https_req.h" "https_req.cpp" "root_certificates.hpp"
+				 "http_client_async_ssl.cpp" "http_client_async.cpp" "root_certificates.hpp"
+				 #"http_req.h" "http_req.cpp"
+				 #"https_req.h" "https_req.cpp" "root_certificates.hpp"
 				 "tasks_queue.h" "tasks_queue.cpp"				 
 				 "html_parser.h" "html_parser.cpp"
 								 
@@ -34,6 +35,7 @@ if (Boost_FOUND)
 endif ()
 
 add_executable(Spider ${SOURCE_FILES})
+target_compile_options(Spider PRIVATE /bigobj) #асинхронный вариант ssl не компилируется без поддержки bigobj
 
 target_compile_features(Spider PRIVATE cxx_std_17)
 

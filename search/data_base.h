@@ -13,10 +13,7 @@ private:
 	bool connect_db(); //выполнить подключение к БД
 	bool create_tables(); //создать необходимые таблицы
 	
-	//bool add_new_str(const std::string& str, std::string tmpl);
-	//int get_str_id(const std::string& str, std::string tmpl);
-	//bool new_word_url_pair(int url_id, int word_id, int num, std::string tmpl);
-
+	
 public:
 
 	explicit Data_base(const std::string params_str)  noexcept;

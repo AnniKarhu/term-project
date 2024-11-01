@@ -22,6 +22,8 @@ struct Search_parameters
 	std::string db_connection_string;
 };
 
+
+
 //class Spider;
 
 class url_processing_thread : public std::thread
@@ -34,7 +36,21 @@ public:
 class Spider //thread_pool
 {
 private:
-	
+	enum  class host_type
+	{
+		host_http = 0,
+		host_https,
+		host_unknown				
+	};
+
+	enum class request_result
+	{
+		req_res_unknown = 0,
+		req_res_ok = 200,
+		req_res_redirect = 301	
+		
+	};
+
 	bool spider_invalid = false; //есть проблемы с пауком
 	Data_base* data_base = nullptr;
 	std::string db_connection_string;
@@ -65,12 +81,15 @@ private:
 	bool process_next_task(const int& thread_index); 
 	bool work_function(const url_item& new_url_item, std::set<std::string>& new_urls_set, std::map<std::string, unsigned  int>& new_words_map);
 
+	host_type get_host_type(std::string& new_url); //определить, по какому протоколу скачивать страницу и скачивать ли
+	void get_host_and_target(std::string& new_url, std::string&  host, std::string& target); //получить host и target
+	bool url_is_forbidden(const std::string& check_host); //не входит ли хост в список запрещенных для индексирования
 	void add_url_words_to_database(const std::string& url_str, const std::map<std::string, unsigned  int>& words_map);
-	
-
 
 public:	
 
+	std::vector<std::string> forbidden_urls{  "facebook.com" }; //{ "instagram.com", "facebook.com" }; //список запрещенных для индексирования хостов
+	
 	Spider(Search_parameters spider_data);
 	~Spider();	
 
@@ -79,12 +98,14 @@ public:
 	Spider& operator=(const Spider& other) = delete;  //оператор присваивания 
 	Spider& operator=(Spider&& other) = delete;       // оператор перемещающего присваивания
 
+	void start_spider(); //старт паука (подключение к базе данных и старт рабочих потоков)
+
 	std::string get_queue_state(); //получить информацию о работе - очередь и пройденные урлы
 	std::string get_threads_state(); //получить информацию о рабочих потоках  - не блокирует мьютексы, поэтому может использоваться только справочно для примерного понимания, какой поток чем занят	
 
 	void print_urls_list();	//вывести список всех полученных урлов
 
-	void start_spider(); //старт паука (подключение к базе данных и старт рабочих потоков	)
+	
 };
 
 

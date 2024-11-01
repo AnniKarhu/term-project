@@ -23,7 +23,6 @@
 #include "data_base.h"
 #include "server_interface.h"
 
-
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
 namespace net = boost::asio;            // from <boost/asio.hpp>

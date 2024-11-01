@@ -15,8 +15,9 @@ set(SOURCE_FILES "main.cpp"
 				 #"server.cpp"
 				 "ini_parser.h" "ini_parser.cpp" "parser_exceptions.h"
 				 "data_base.h" "data_base.cpp" 	
-				 #"server_interface.h" # "server_interface.cpp" 
-				 )
+				 #"server_interface.h"  
+				 "server_interface.cpp" 
+				  )
 
 
 project(Server)

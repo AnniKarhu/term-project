@@ -25,76 +25,21 @@ namespace http = beast::http;           // from <boost/beast/http.hpp>
 namespace net = boost::asio;            // from <boost/asio.hpp>
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
+/*  Beast functions   */
+beast::string_view mime_type(beast::string_view path);// Return a reasonable mime type based on the extension of a file.
+std::string path_cat(beast::string_view base, beast::string_view path);// Append an HTTP rel-path to a local filesystem path. The returned path is normalized for the platform.
+void fail(beast::error_code ec, char const* what); // Report a failure
+
+
+/*   My functions   */
 std::string open_start_file_search_result(const std::string& file_path); //получить содержимое файла html для вывода результата клиенту
 bool split_str_content(const std::string& source_str, std::string& start_str, std::string& end_str); //разделить строку на 2 части по делимитеру "<!--search result below-->"
 std::string clear_request_string(const std::string& source_str); //очистить строку поиска от служебного содержимого
 std::set<std::string> get_words_request_set(const std::string& source_str); //создать set из слов запроса
 bool urls_vector_cmp(std::pair<std::string, int> pair_a, std::pair<std::string, int> pair_b); //сравнение пар урл-значение
+std::string get_post_request_result_string(const std::string& request_string, Data_base* data_base, int search_results); //получить строку с результатами поиска по словам
+std::string prepare_body_string(const std::string& path, const std::string& request_string, const std::string& search_result_string);
 
-
-
-// Return a reasonable mime type based on the extension of a file.
-beast::string_view mime_type(beast::string_view path)
-{
-    using beast::iequals;
-    auto const ext = [&path]
-        {
-            auto const pos = path.rfind(".");
-            if (pos == beast::string_view::npos)
-                return beast::string_view{};
-            return path.substr(pos);
-        }();
-    if (iequals(ext, ".htm"))  return "text/html";
-    if (iequals(ext, ".html")) return "text/html";
-    if (iequals(ext, ".php"))  return "text/html";
-    if (iequals(ext, ".css"))  return "text/css";
-    if (iequals(ext, ".txt"))  return "text/plain";
-    if (iequals(ext, ".js"))   return "application/javascript";
-    if (iequals(ext, ".json")) return "application/json";
-    if (iequals(ext, ".xml"))  return "application/xml";
-    if (iequals(ext, ".swf"))  return "application/x-shockwave-flash";
-    if (iequals(ext, ".flv"))  return "video/x-flv";
-    if (iequals(ext, ".png"))  return "image/png";
-    if (iequals(ext, ".jpe"))  return "image/jpeg";
-    if (iequals(ext, ".jpeg")) return "image/jpeg";
-    if (iequals(ext, ".jpg"))  return "image/jpeg";
-    if (iequals(ext, ".gif"))  return "image/gif";
-    if (iequals(ext, ".bmp"))  return "image/bmp";
-    if (iequals(ext, ".ico"))  return "image/vnd.microsoft.icon";
-    if (iequals(ext, ".tiff")) return "image/tiff";
-    if (iequals(ext, ".tif"))  return "image/tiff";
-    if (iequals(ext, ".svg"))  return "image/svg+xml";
-    if (iequals(ext, ".svgz")) return "image/svg+xml";
-    return "application/text";
-}
-
-// Append an HTTP rel-path to a local filesystem path.
-// The returned path is normalized for the platform.
-std::string path_cat(beast::string_view base, beast::string_view path)
-{
-        if (base.empty())
-            return std::string(path);
-
-        std::string result(base);
-    #ifdef BOOST_MSVC
-        char constexpr path_separator = '\\';
-        if (result.back() == path_separator)
-            result.resize(result.size() - 1);
-
-        result.append(path.data(), path.size());
-
-        for (auto& c : result)
-            if (c == '/')
-                c = path_separator;
-    #else
-        char constexpr path_separator = '/';
-        if (result.back() == path_separator)
-            result.resize(result.size() - 1);
-
-        result.append(path.data(), path.size());
-    #endif
-        return result;
-}
 
 // Return a response for the given request.
 // The concrete type of the response message (which depends on the request), is type-erased in message_generator.
@@ -113,7 +58,7 @@ http::message_generator handle_request(
             res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
             res.set(http::field::content_type, "text/html");
             res.keep_alive(req.keep_alive());
-            res.body() = std::string(why);
+            res.body() = "<p>" + std::string(why) + "</p>";
             res.prepare_payload();
             return res;
         };
@@ -126,7 +71,7 @@ http::message_generator handle_request(
             res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
             res.set(http::field::content_type, "text/html");
             res.keep_alive(req.keep_alive());
-            res.body() = "The resource '" + std::string(target) + "' was not found.";
+            res.body() = "<p>The resource '" + std::string(target) + "' was not found.</p><p>Try from <a href=\"index.html\">the start page</a></p>";
             res.prepare_payload();
             return res;
         };
@@ -139,7 +84,7 @@ http::message_generator handle_request(
             res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
             res.set(http::field::content_type, "text/html");
             res.keep_alive(req.keep_alive());
-            res.body() = "An error occurred: '" + std::string(what) + "'";
+            res.body() = "<p>An error occurred: '" + std::string(what) + "'</p>";
             res.prepare_payload();
             return res;
         };
@@ -200,193 +145,27 @@ http::message_generator handle_request(
         res.set(http::field::content_type, mime_type(path));
         res.content_length(size);
         res.keep_alive(req.keep_alive());
-
         return res;
     }
 
     //POST request
-
-    std::cout << "req.body() = " << req.body() << "\n\n";
-    std::string request_string  = clear_request_string (req.body());
-
-   // request_string = ;
-    std::cout << "request_string = " << request_string << "\n\n";
-
-    std::set<std::string> words_set = get_words_request_set(request_string); //получить set слов запроса
-    std::map<std::string, int> map_urls_list = data_base->get_urls_list_by_words(words_set); //получить список адресов, по которым встречаются эти слова
    
-    const int words_num = words_set.size();
-
-    //по каждому из полученных адресов посчитать, сколько искомых слов у него есть.
-    //если количество слов меньше искомого, такие адреса в дальнейшей выборке не участвуют, их multiplier = 0.
-    //для адресов, где количество слов равно запрашиваемому, multiplier = 1 - это начальное значение счетчика
-    for (auto url : map_urls_list)
-    {
-        int url_words_count = data_base->count_url_words(words_set, url.first);
-        if (words_num == url_words_count)
-        {
-            url.second = 1;
-        }
-        //std::cout << url.first << " = " << url.second << "\n";
-    }
-
-    std::multimap<std::string, int> words_urls_table = data_base->get_words_urls_table(words_set); //получить из базы все записи с адресами и количеством вхождений слов
-    
-    for (auto url : words_urls_table)
-    {
-        if (map_urls_list[url.first]) //если multiplier этого элемента не равен 0
-        {
-            map_urls_list[url.first] = map_urls_list[url.first] + url.second;
-        }       
-    }
-
-    std::vector<std::pair<std::string, int>> final_array;
-    for (auto url : words_urls_table)
-    {
-        final_array.push_back(std::pair<std::string, int>(url.first, url.second));
-    }
-
-    sort(final_array.begin(), final_array.end(), urls_vector_cmp);
-    
-    for (auto url : final_array)
-    {
-        std::cout << url.first << " = " << url.second << "\n";
-    }
-  
-    int results_num = (search_results > final_array.size() ? final_array.size() : search_results); 
-
-    std::string search_result_string;
-    for (int i = 0; i < results_num; ++i)
-    {
-        search_result_string += "<p>" + std::to_string(i+1)+ ". <a href = \"" + final_array[i].first + "\">" + final_array[i].first + "</a></p>\n";
-    }
-
-    if (search_result_string.empty())
-    {
-        search_result_string = "<p>Unfortunately, there are no results for you request. Try one more time.</p>\n";
-    }
+    std::string request_string  = clear_request_string (req.body());   
+    std::cout << "request_string = " << request_string << "\n\n";    
+    std::string search_result_string = get_post_request_result_string(request_string, data_base, search_results); //получить строку с результатами поиска по словам
 
     http::response<http::string_body> res{ http::status::ok, req.version() };
     res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
     //res.set(http::field::content_type, "text/html");
     res.set(http::field::content_type, mime_type(path));
     res.keep_alive(req.keep_alive());
-
-
-    std::string body_str = open_start_file_search_result(path);
-
-    std::string start_str;
-    std::string end_str;
-
-    if (split_str_content(body_str, start_str, end_str))
-    {
-        body_str = start_str + "<p>Your search: " + request_string + "</p>\n" + search_result_string + end_str;
-    }    
-
-    res.body() = body_str;
-
-    auto const size_body = body_str.size();
-    res.content_length(size_body);
+    res.body() = prepare_body_string(path, request_string, search_result_string);
+    res.content_length(res.body().size());
     res.prepare_payload();
-
     std::cout << "get req search_results = " << search_results << "\n";
-
-    //std::string  html_body_str = boost::beast::buffers_to_string(res.body().data());        
-
     return res;
 }
 
-// Report a failure
-void
-fail(beast::error_code ec, char const* what)
-{
-    std::cerr << what << ": " << ec.message() << "\n";
-}
 
-std::string open_start_file_search_result(const std::string& file_path)
-{
-   // std::cout << "path = " << file_path << "\n";
-    std::ifstream res_file(file_path);
-    if (!res_file.is_open())
-    {
-       return "file " + file_path + " not found";
-    }
-    
-    std::string file_content;
-    std::string str;
 
-    while (!res_file.eof())
-    {
-        std::getline(res_file, str);
-        file_content += str;
-        file_content += "\n";
-    }    
-
-   // std::cout << file_content << std::endl;
-    res_file.close();
-    return file_content;
-}
-
-bool split_str_content(const std::string& source_str, std::string& start_str, std::string& end_str) //разделить результирующий  файл на 2 части - в середину буду вставлять результаты поиска
-{        
-    std::smatch res;
-    if (regex_search(source_str, res, std::regex("<!--search result below-->")))
-    {
-        start_str = res.prefix();
-        end_str = res.suffix();
-        return true;
-     }
-    else return false;
-}
-
-std::string clear_request_string(const std::string& source_str) //очистить строку поиска от служебного содержимого
-{
-    std::string field_name = "search_request=";
-    
-    if (!source_str.find(field_name) == 0)
-        return "";
-
-    std::string res_string = source_str;
-
-    res_string.erase(0, field_name.size());
-
-    res_string = std::regex_replace(res_string, std::regex("%09"), " "); //убрать знаки табуляции
-    res_string = std::regex_replace(res_string, std::regex("([\.,:;!?\\\"'*+=_~#$^&])"), " "); //убрать знаки препинания и спец символы
-    res_string = std::regex_replace(res_string, std::regex(" {2,}"), " "); //убрать двойные пробелы
-    
-    //все строчные
-    std::transform(res_string.begin(), res_string.end(), res_string.begin(),
-        [](unsigned char c) { return std::tolower(c); });
-
-    return res_string;
-}
-
-std::set<std::string> get_words_request_set(const std::string& source_str)
-{
-    //std::string str = source_str; // "1111 2222 3333 4444"; //source_str;
-    std::set<std::string> result_set;
-
-    std::istringstream in_string { source_str };
-    // std::vector<std::string> result_vector;
-
-    std::string single_word;
-    while (!in_string.eof())
-    {   
-        in_string >> single_word;
-        result_set.insert(single_word); // .push_back();
-    }
-
-    /*std::cout << "___________get_words_request_set_________" << "\n";
-    for (const std::string& el : result_set) 
-    {
-        std::cout << elg << "\n";
-    }*/
-
-    return result_set;
-}
-
-bool urls_vector_cmp(std::pair<std::string, int> pair_a, std::pair<std::string, int> pair_b) //сравнение пар урл-значение
-{
-  return   pair_a.second > pair_b.second ? true : false;
-}
 

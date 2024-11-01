@@ -57,11 +57,7 @@ std::set<std::string> html_parser::get_urls_from_html(const std::string& html_bo
         {
              urls_set.insert(final_url);
         }  
-        /*else
-        {
-            std::cout << "foreign url not added " << final_url << "\n";
-        }*/
-       
+               
         s2 = res1.suffix(); //продолжить поиск в оставшейся части      
     };     
     return urls_set;
@@ -72,9 +68,10 @@ std::string html_parser::clear_tags(const std::string& html_body_str)
         
     std::string s2 = html_body_str;
 
-    //s2 = test_html_str;
-    s2 = std::regex_replace(s2, std::regex("\n"), " ");
-    s2 = std::regex_replace(s2, std::regex("\t"), " ");
+   
+    s2 = std::regex_replace(s2, std::regex("[\n\t]"), " ");   
+    //s2 = std::regex_replace(s2, std::regex("\n"), " ");
+    //s2 = std::regex_replace(s2, std::regex("\t"), " ");
     s2 = std::regex_replace(s2, std::regex(">"), "> ");
     s2 = std::regex_replace(s2, std::regex("< /"), "</");
     s2 = std::regex_replace(s2, std::regex("</ "), "</");
@@ -105,11 +102,7 @@ std::string html_parser::clear_tags(const std::string& html_body_str)
         s2 = std::regex_replace(s2, std::regex(regex_str), "");
      };
 
-    //std::cout << " s2 = \n" << s2 << "\n";
-
-   // std::string substr = "\\u003"
-   // std::regex rx()
-
+    
 
     regex_str = ("(u003c)");//спецсимволы
     s2 = std::regex_replace(s2, std::regex(regex_str), " ");
