@@ -112,7 +112,7 @@ std::string open_start_file_search_result(const std::string& file_path)
     return file_content;
 }
 
-bool split_str_content(const std::string& source_str, std::string& start_str, std::string& end_str) //разделить результирующий  файл на 2 части - в середину буду вставлять результаты поиска
+bool split_str_content(const std::string& source_str, std::string& start_str, std::string& end_str) //СЂР°Р·РґРµР»РёС‚СЊ СЂРµР·СѓР»СЊС‚РёСЂСѓСЋС‰РёР№  С„Р°Р№Р» РЅР° 2 С‡Р°СЃС‚Рё - РІ СЃРµСЂРµРґРёРЅСѓ Р±СѓРґСѓ РІСЃС‚Р°РІР»СЏС‚СЊ СЂРµР·СѓР»СЊС‚Р°С‚С‹ РїРѕРёСЃРєР°
 {
     std::smatch res;
     if (regex_search(source_str, res, std::regex("<!--search result below-->")))
@@ -124,7 +124,7 @@ bool split_str_content(const std::string& source_str, std::string& start_str, st
     else return false;
 }
 
-std::string clear_request_string(const std::string& source_str)  //очистить строку поиска от служебного содержимого
+std::string clear_request_string(const std::string& source_str)   //РѕС‡РёСЃС‚РёС‚СЊ СЃС‚СЂРѕРєСѓ РїРѕРёСЃРєР° РѕС‚ СЃР»СѓР¶РµР±РЅРѕРіРѕ СЃРѕРґРµСЂР¶РёРјРѕРіРѕ
 {
     std::string field_name = "search_request=";
 
@@ -135,11 +135,11 @@ std::string clear_request_string(const std::string& source_str)  //очистить стро
 
     res_string.erase(0, field_name.size());
 
-    res_string = std::regex_replace(res_string, std::regex("%09"), " ");  //убрать знаки табуляции
-    res_string = std::regex_replace(res_string, std::regex("([\.,:;!?\\\"'*+=_~#$^&])"), " "); //убрать знаки препинания и спец символы
-    res_string = std::regex_replace(res_string, std::regex(" {2,}"), " "); //убрать двойные пробелы
+    res_string = std::regex_replace(res_string, std::regex("%09"), " ");  //СѓР±СЂР°С‚СЊ Р·РЅР°РєРё С‚Р°Р±СѓР»СЏС†РёРё
+    res_string = std::regex_replace(res_string, std::regex("([\.,:;!?\\\"'*+=_~#$^&])"), " "); //СѓР±СЂР°С‚СЊ Р·РЅР°РєРё РїСЂРµРїРёРЅР°РЅРёСЏ Рё СЃРїРµС† СЃРёРјРІРѕР»С‹
+    res_string = std::regex_replace(res_string, std::regex(" {2,}"), " "); //СѓР±СЂР°С‚СЊ РґРІРѕР№РЅС‹Рµ РїСЂРѕР±РµР»С‹
 
-    //все строчные
+   //РІСЃРµ СЃС‚СЂРѕС‡РЅС‹Рµ
     std::transform(res_string.begin(), res_string.end(), res_string.begin(),
         [](unsigned char c) { return std::tolower(c); });
 
@@ -161,27 +161,27 @@ std::set<std::string> get_words_request_set(const std::string& source_str)
     return result_set;
 }
 
-bool urls_vector_cmp(std::pair<std::string, int> pair_a, std::pair<std::string, int> pair_b) //сравнение пар урл-значение
+bool urls_vector_cmp(std::pair<std::string, int> pair_a, std::pair<std::string, int> pair_b) //СЃСЂР°РІРЅРµРЅРёРµ РїР°СЂ СѓСЂР»-Р·РЅР°С‡РµРЅРёРµ
 {
     return   pair_a.second > pair_b.second ? true : false;    
 }
 
 
-std::string get_post_request_result_string(const std::string& request_string, Data_base* data_base, int search_results)  //получить строку с результатами поиска по словам
+std::string get_post_request_result_string(const std::string& request_string, Data_base* data_base, int search_results)  //РїРѕР»СѓС‡РёС‚СЊ СЃС‚СЂРѕРєСѓ СЃ СЂРµР·СѓР»СЊС‚Р°С‚Р°РјРё РїРѕРёСЃРєР° РїРѕ СЃР»РѕРІР°Рј
 {
-    std::set<std::string> words_set;//набор слов в запросе
-    std::map<std::string, int> map_urls_list; //список адресов, в которых встречаются слова
-    std::multimap<std::string, int> words_urls_table; //все записи из БД с адресами и количеством вхождений слов
-    std::vector<std::pair<std::string, int>> final_array; //результирующий массив адресов
+    std::set<std::string> words_set;//РЅР°Р±РѕСЂ СЃР»РѕРІ РІ Р·Р°РїСЂРѕСЃРµ
+    std::map<std::string, int> map_urls_list; //СЃРїРёСЃРѕРє Р°РґСЂРµСЃРѕРІ, РІ РєРѕС‚РѕСЂС‹С… РІСЃС‚СЂРµС‡Р°СЋС‚СЃСЏ СЃР»РѕРІР°
+    std::multimap<std::string, int> words_urls_table; //РІСЃРµ Р·Р°РїРёСЃРё РёР· Р‘Р” СЃ Р°РґСЂРµСЃР°РјРё Рё РєРѕР»РёС‡РµСЃС‚РІРѕРј РІС…РѕР¶РґРµРЅРёР№ СЃР»РѕРІ
+    std::vector<std::pair<std::string, int>> final_array; //СЂРµР·СѓР»СЊС‚РёСЂСѓСЋС‰РёР№ РјР°СЃСЃРёРІ Р°РґСЂРµСЃРѕРІ
 
-    words_set = get_words_request_set(request_string); //получить set слов запроса
-    const int words_num = words_set.size();//сколько слов в запросе
+    words_set = get_words_request_set(request_string); //РїРѕР»СѓС‡РёС‚СЊ set СЃР»РѕРІ Р·Р°РїСЂРѕСЃР°
+    const int words_num = words_set.size();//СЃРєРѕР»СЊРєРѕ СЃР»РѕРІ РІ Р·Р°РїСЂРѕСЃРµ
 
-    map_urls_list = data_base->get_urls_list_by_words(words_set); //получить список адресов, по которым встречаются эти слова
+    map_urls_list = data_base->get_urls_list_by_words(words_set); //РїРѕР»СѓС‡РёС‚СЊ СЃРїРёСЃРѕРє Р°РґСЂРµСЃРѕРІ, РїРѕ РєРѕС‚РѕСЂС‹Рј РІСЃС‚СЂРµС‡Р°СЋС‚СЃСЏ СЌС‚Рё СЃР»РѕРІР°
 
-    //по каждому из полученных адресов посчитать, сколько искомых слов у него есть.
-    //если количество слов меньше искомого, такие адреса в дальнейшей выборке не участвуют, их multiplier = 0.
-    //для адресов, где количество слов равно запрашиваемому, multiplier = 1 - это начальное значение счетчика
+    //РїРѕ РєР°Р¶РґРѕРјСѓ РёР· РїРѕР»СѓС‡РµРЅРЅС‹С… Р°РґСЂРµСЃРѕРІ РїРѕСЃС‡РёС‚Р°С‚СЊ, СЃРєРѕР»СЊРєРѕ РёСЃРєРѕРјС‹С… СЃР»РѕРІ Сѓ РЅРµРіРѕ РµСЃС‚СЊ.
+    //РµСЃР»Рё РєРѕР»РёС‡РµСЃС‚РІРѕ СЃР»РѕРІ РјРµРЅСЊС€Рµ РёСЃРєРѕРјРѕРіРѕ, С‚Р°РєРёРµ Р°РґСЂРµСЃР° РІ РґР°Р»СЊРЅРµР№С€РµР№ РІС‹Р±РѕСЂРєРµ РЅРµ СѓС‡Р°СЃС‚РІСѓСЋС‚, РёС… multiplier = 0.
+    //РґР»СЏ Р°РґСЂРµСЃРѕРІ, РіРґРµ РєРѕР»РёС‡РµСЃС‚РІРѕ СЃР»РѕРІ СЂР°РІРЅРѕ Р·Р°РїСЂР°С€РёРІР°РµРјРѕРјСѓ, multiplier = 1 - СЌС‚Рѕ РЅР°С‡Р°Р»СЊРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ СЃС‡РµС‚С‡РёРєР°
     for (auto url : map_urls_list)
     {
         int url_words_count = data_base->count_url_words(words_set, url.first);
@@ -191,11 +191,11 @@ std::string get_post_request_result_string(const std::string& request_string, Da
         }
     }
 
-    words_urls_table = data_base->get_words_urls_table(words_set); //получить из базы все записи с адресами и количеством вхождений слов
+    words_urls_table = data_base->get_words_urls_table(words_set); //РїРѕР»СѓС‡РёС‚СЊ РёР· Р±Р°Р·С‹ РІСЃРµ Р·Р°РїРёСЃРё СЃ Р°РґСЂРµСЃР°РјРё Рё РєРѕР»РёС‡РµСЃС‚РІРѕРј РІС…РѕР¶РґРµРЅРёР№ СЃР»РѕРІ
 
     for (auto url : words_urls_table)
     {
-        if (map_urls_list[url.first]) //если multiplier этого элемента не равен 0
+        if (map_urls_list[url.first]) //РµСЃР»Рё multiplier СЌС‚РѕРіРѕ СЌР»РµРјРµРЅС‚Р° РЅРµ СЂР°РІРµРЅ 0
         {
             map_urls_list[url.first] = map_urls_list[url.first] + url.second;
         }

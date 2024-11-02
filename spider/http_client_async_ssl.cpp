@@ -44,7 +44,7 @@ class session_ssl : public std::enable_shared_from_this<session_ssl>
     beast::flat_buffer buffer_; // (Must persist between reads)
     http::request<http::empty_body> req_;
     http::response<http::string_body> res_;
-    std::promise<std::tuple<int, std::string, std::string>>& promise_;     // Добавляем std::promise для результата
+    std::promise<std::tuple<int, std::string, std::string>>& promise_;      // Р”РѕР±Р°РІР»СЏРµРј std::promise РґР»СЏ СЂРµР·СѓР»СЊС‚Р°С‚Р°
 
 private:
     std::string const port = "443";
@@ -57,7 +57,7 @@ public:
                         std::promise<std::tuple<int, std::string, std::string>>& promise)   : 
                                                                                             resolver_(ex),
                                                                                             stream_(ex, ctx),
-                                                                                            promise_(promise)  // Инициализируем promise
+                                                                                            promise_(promise)  // РРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј promise
     {
     }
 
