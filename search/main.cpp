@@ -25,7 +25,7 @@ int main()
 		port_str = parser.get_value<std::string>("Server.port");
 
 		db_connection_string = "host=" + parser.get_value<std::string>("Database.host") + " ";	//"host=127.0.0.1 "
-		db_connection_string += "port=" + parser.get_value<std::string>("Database.port") + " ";	//"port=5432 "
+		db_connection_string += "port=" + parser.get_value<std::string>("Database.port") + " ";	//"port=5432"
 		db_connection_string += "dbname=" + parser.get_value<std::string>("Database.dbname") + " ";	//"spider_index"
 		db_connection_string += "user=" + parser.get_value<std::string>("Database.user") + " ";	//"user_term_project"
 		db_connection_string += "password=" + parser.get_value<std::string>("Database.password") + " ";//"password=user_term_project

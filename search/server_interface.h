@@ -32,12 +32,12 @@ void fail(beast::error_code ec, char const* what); // Report a failure
 
 
 /*   My functions   */
-std::string open_start_file_search_result(const std::string& file_path); //                          html                              
-bool split_str_content(const std::string& source_str, std::string& start_str, std::string& end_str); //                    2                     "<!--search result below-->"
-std::string clear_request_string(const std::string& source_str); //                                                
-std::set<std::string> get_words_request_set(const std::string& source_str); //        set                
-bool urls_vector_cmp(std::pair<std::string, int> pair_a, std::pair<std::string, int> pair_b); //                 -        
-std::string get_post_request_result_string(const std::string& request_string, Data_base* data_base, int search_results); //                                               
+std::string open_start_file_search_result(const std::string& file_path); //получить содержимое файла html для вывода результата клиенту
+bool split_str_content(const std::string& source_str, std::string& start_str, std::string& end_str); //разделить строку на 2 части по делимитеру "<!--search result below-->"
+std::string clear_request_string(const std::string& source_str); //очистить строку поиска от служебного содержимого
+std::set<std::string> get_words_request_set(const std::string& source_str); //создать set из слов запроса
+bool urls_vector_cmp(std::pair<std::string, int> pair_a, std::pair<std::string, int> pair_b); //сравнение пар урл-значение
+std::string get_post_request_result_string(const std::string& request_string, Data_base* data_base, int search_results);  //получить строку с результатами поиска по словам
 std::string prepare_body_string(const std::string& path, const std::string& request_string, const std::string& search_result_string);
 
 
@@ -152,7 +152,7 @@ http::message_generator handle_request(
    
     std::string request_string  = clear_request_string (req.body());   
     std::cout << "request_string = " << request_string << "\n\n";    
-    std::string search_result_string = get_post_request_result_string(request_string, data_base, search_results); //                                               
+    std::string search_result_string = get_post_request_result_string(request_string, data_base, search_results); //получить строку с результатами поиска по словам                                               
 
     http::response<http::string_body> res{ http::status::ok, req.version() };
     res.set(http::field::server, BOOST_BEAST_VERSION_STRING);

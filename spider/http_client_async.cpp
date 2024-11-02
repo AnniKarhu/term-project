@@ -59,10 +59,9 @@ public:
 
     // Start the asynchronous operation
     void  run(
-            char const* host,
-           // char const* port,
+            char const* host,          
             char const* target
-            //int version
+           
             )
     {
         // Set up an HTTP GET request message
