@@ -182,29 +182,38 @@ std::string get_post_request_result_string(const std::string& request_string, Da
     //по каждому из полученных адресов посчитать, сколько искомых слов у него есть.
     //если количество слов меньше искомого, такие адреса в дальнейшей выборке не участвуют, их multiplier = 0.
     //для адресов, где количество слов равно запрашиваемому, multiplier = 1 - это начальное значение счетчика
-    for (auto url : map_urls_list)
+    
+   
+    for (auto& url : map_urls_list)
     {
         int url_words_count = data_base->count_url_words(words_set, url.first);
         if (words_num == url_words_count)
         {
-            url.second = 1;
+            url.second = 0;           
         }
     }
 
+    
     words_urls_table = data_base->get_words_urls_table(words_set); //получить из базы все записи с адресами и количеством вхождений слов
-
+    
     for (auto url : words_urls_table)
-    {
-        if (map_urls_list[url.first]) //если multiplier этого элемента не равен 0
-        {
+    {          
+        
+        if (map_urls_list[url.first] >= 0) //если multiplier этого элемента 1 или больше
+        {            
             map_urls_list[url.first] = map_urls_list[url.first] + url.second;
-        }
-    }
+        } 
+    }    
+
 
     //std::vector<std::pair<std::string, int>> final_array;
-    for (auto url : words_urls_table)
+    // for (auto url : words_urls_table)
+    for (auto url : map_urls_list)
     {
-        final_array.push_back(std::pair<std::string, int>(url.first, url.second));
+        if (url.second > 0)
+        {   
+            final_array.push_back(std::pair<std::string, int>(url.first, url.second));
+        }
     }
 
     sort(final_array.begin(), final_array.end(), urls_vector_cmp);

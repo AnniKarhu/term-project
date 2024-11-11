@@ -90,7 +90,10 @@ std::string html_parser::clear_tags(const std::string& html_body_str)
     {
         res_str = res1.str();
         res_str = std::regex_replace(res_str, std::regex("<title>"), "");
-        s2 = std::regex_replace(s2, std::regex(res_str), "");
+
+       // "openssl - Conan 2.0: C and C++ Open Source Package Manager"
+      //  s2 = std::regex_replace(s2, std::regex("openssl - Conan 2.0: C and C Open Source Package Manager"), "");
+       // s2 = std::regex_replace(s2, std::regex(res_str), "");
     }
 
     regex_str = ("^.+?(<body)");//удалить все до тега body
@@ -140,7 +143,7 @@ std::string html_parser::clear_tags(const std::string& html_body_str)
     std::transform(res_str.begin(), res_str.end(), res_str.begin(),
         [](unsigned char c) { return std::tolower(c); });
 
-   // std::cout << " res_str = " << res_str << "\n";
+    
     return res_str;
 }
 
